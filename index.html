@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북미 이차전지 밸류체인 및 Spoke-Hub 전략 지도 v4.9</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Malgun Gothic', -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+        #map { width: 100vw; height: 100vh; background: #cbd5e1; }
+
+        .dark-mode-map { background: #0b0f19 !important; }
+        .dark-mode-map .leaflet-tile-pane {
+            filter: brightness(0.85) invert(1) contrast(1.3) hue-rotate(200deg);
+        }
+
+        .control-box {
+            position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.96); padding: 10px 14px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: fit-content; max-width: 96vw;
+        }
+        .title-badge {
+            font-weight: 800; font-size: 14px; color: #0f172a; margin-right: 4px;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
+        }
+        .ver-tag { background: #2563eb; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        select, input[type="text"], input[type="number"], button {
+            padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
+            font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;
+        }
+        button { cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        button:hover { background: #f1f5f9; }
+        .btn-primary { background: #1e293b; color: #fff; border-color: #1e293b; }
+        .btn-primary:hover { background: #334155; }
+        .btn-active { background: #dc2626 !important; color: #fff !important; border-color: #dc2626 !important; }
+        .btn-lang { background: #059669 !important; color: #fff !important; border-color: #059669 !important; }
+        
+        .metal-price-box {
+            display: flex; align-items: center; gap: 6px; background: #f8fafc;
+            border: 1px solid #94a3b8; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+        }
+        .metal-price-box input { width: 55px; text-align: right; font-weight: bold; padding: 2px 4px; }
+
+        .layer-toggle {
+            display: flex; align-items: center; gap: 5px; background: #eff6ff;
+            border: 1px solid #93c5fd; padding: 5px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 700; color: #1d4ed8; cursor: pointer; white-space: nowrap;
+        }
+        .layer-toggle input { cursor: pointer; margin: 0; }
+
+        .legend-box {
+            position: absolute; bottom: 20px; left: 12px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.96); padding: 12px 15px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
+            font-size: 12px; color: #1e293b; min-width: 245px;
+        }
+        .legend-title { font-weight: 800; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 600; }
+        
+        .icon-circle-red { width: 12px; height: 12px; border-radius: 50%; background: #ef4444; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+        .icon-dia-yellow { width: 11px; height: 11px; transform: rotate(45deg); background: #eab308; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.5); border-radius: 2px; }
+        .icon-circle-green { width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+        .icon-square-blue { width: 12px; height: 12px; border-radius: 3px; background: #3b82f6; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+
+        .analysis-panel {
+            position: absolute; top: 75px; right: 12px; z-index: 1000;
+            width: 375px; max-height: 82vh; overflow-y: auto;
+            background: rgba(255, 255, 255, 0.97); padding: 15px; border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18); border: 1px solid #cbd5e1;
+            display: none; font-size: 12px; color: #1e293b;
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 10px; }
+        .panel-title { font-weight: 800; font-size: 14px; color: #0f172a; }
+        .close-btn { background: none; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: #64748b; }
+        
+        .calc-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+        .calc-title { font-weight: 800; color: #1e3a8a; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; }
+        .calc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
+        .calc-row input { width: 75px; padding: 3px 6px; text-align: right; border: 1px solid #94a3b8; border-radius: 4px; font-weight: bold; }
+        .calc-result { background: #eff6ff; border-top: 1px dashed #93c5fd; padding-top: 8px; margin-top: 6px; }
+        .cost-highlight { color: #dc2626; font-weight: 800; font-size: 13px; }
+
+        .zone-badge-300 { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 11px; display: inline-block; margin-bottom: 6px; }
+        .zone-badge-650 { background: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 11px; display: inline-block; margin: 10px 0 6px 0; }
+        .fac-list-item { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .fac-list-item:hover { background: #f8fafc; cursor: pointer; }
+
+        .ira-label {
+            background: rgba(30, 58, 138, 0.90); color: #fff; padding: 4px 8px;
+            border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center;
+            border: 1px solid #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<div class="control-box">
+    <div class="title-badge">
+        <span id="uiTitle">⚡ 북미 배터리 SCM & Spoke-Hub 전략지도</span>
+        <span class="ver-tag">v4.9</span>
+    </div>
+    
+    <select id="filterCategory" onchange="renderMarkers()">
+        <option value="ALL">전체 밸류체인 (All)</option>
+        <option value="Cell">배터리 셀 (Cell Gigafactory)</option>
+        <option value="Material">양극재/전구체 (Cathode/Material)</option>
+        <option value="Spoke">리사이클링 Spoke (전처리·블랙매스)</option>
+        <option value="Hub">리사이클링 Hub (후처리·정련)</option>
+    </select>
+
+    <select id="filterStatus" onchange="renderMarkers()">
+        <option value="ALL">전체 가동상태</option>
+        <option value="Operating">가동중 (Operating)</option>
+        <option value="Construction">건설/시운전/중단</option>
+    </select>
+
+    <select id="mapStyleSelect" onchange="changeBaseMap()">
+        <option value="esri_street">🗺️ 표준 도로 지도</option>
+        <option value="esri_light">⚪ 비즈니스 캔버스</option>
+        <option value="google_road">🌐 구글 표준 지도</option>
+        <option value="esri_sat">🛰️ 위성 지도</option>
+    </select>
+
+    <div class="metal-price-box" title="금속 단가 변경 시 열려 있는 팝업창도 실시간으로 재계산됩니다.">
+        <span>🪙 기준단가($/t):</span>
+        <span>Ni:</span><input type="number" id="priceNi" value="17000" step="500" oninput="onPriceInput()">
+        <span>Co:</span><input type="number" id="priceCo" value="28000" step="1000" oninput="onPriceInput()">
+        <span>Li:</span><input type="number" id="priceLi" value="12500" step="500" oninput="onPriceInput()">
+    </div>
+
+    <input type="text" id="searchInput" placeholder="기업명, 주, 화학계 검색..." onkeyup="renderMarkers()" style="width: 110px;">
+
+    <button id="simBtn" onclick="toggleSimMode()">🎯 물류비 시뮬레이션: OFF</button>
+
+    <label class="layer-toggle">
+        <input type="checkbox" id="iraLayerToggle" onchange="toggleIraLayer()">
+        <span id="uiIraText">🏛️ IRA & 캐나다 인센티브 레이어</span>
+    </label>
+
+    <button id="langBtn" class="btn-lang" onclick="toggleLanguage()">🌐 English</button>
+    <button onclick="toggleDarkMode()" id="darkBtn">🌙 다크모드</button>
+    <button class="btn-primary" onclick="resetMap()" id="resetBtn">🔄 초기화</button>
+</div>
+
+<div class="legend-box">
+    <div class="legend-title" id="legTitle">📌 밸류체인 및 시설 구분</div>
+    <div class="legend-item"><span class="icon-circle-red"></span> <span id="legCell">배터리 셀 (Cell Gigafactory)</span></div>
+    <div class="legend-item"><span class="icon-dia-yellow"></span> <span id="legMat">양극재/전구체 (Cathode/Material)</span></div>
+    <div class="legend-item"><span class="icon-circle-green"></span> <span id="legSpoke">리사이클링 <b>Spoke</b> (전처리)</span></div>
+    <div class="legend-item"><span class="icon-square-blue"></span> <span id="legHub">리사이클링 <b>Hub</b> (정련)</span></div>
+    <div style="border-top:1px solid #e2e8f0; margin: 6px 0; padding-top:6px; font-size:11px; color:#475569; line-height:1.4;" id="legSub">
+        <div>• <b>실선:</b> 가동중 / <b>점선:</b> 건설·시운전·중단</div>
+        <div>🟢 <b>300km:</b> 셔틀권 / 🟠 <b>650km:</b> 한계권</div>
+    </div>
+</div>
+
+<div class="analysis-panel" id="analysisPanel">
+    <div class="panel-header">
+        <span class="panel-title" id="panelTitle">📍 입지 및 물류비용 분석</span>
+        <button class="close-btn" onclick="closePanel()">✕</button>
+    </div>
+    
+    <div class="calc-box">
+        <div class="calc-title">
+            <span id="calcHeaderTitle">🚚 예상 물류비용 시뮬레이터</span>
+            <span style="font-size:10px; color:#64748b;" id="calcSub">북미 내륙 트럭 기준</span>
+        </div>
+        <div class="calc-row">
+            <span id="lblRate">운임 단가 ($ / ton·km):</span>
+            <input type="number" id="rateInput" value="0.18" step="0.01" onchange="updateLogisticsCost()">
+        </div>
+        <div class="calc-row">
+            <span id="lblTon">연간 물동량 (톤 / 년):</span>
+            <input type="number" id="tonInput" value="10000" step="1000" onchange="updateLogisticsCost()">
+        </div>
+        <div class="calc-row">
+            <span id="lblHazmat">화물 위험도 (Class 9):</span>
+            <select id="hazmatFactor" onchange="updateLogisticsCost()" style="padding:2px 4px; font-size:11px;">
+                <option value="1.0">일반화물 (1.0x - 블랙매스)</option>
+                <option value="1.35">위험물할증 (1.35x - 스크랩)</option>
+            </select>
+        </div>
+        <div class="calc-result" id="costResultBox"></div>
+    </div>
+
+    <div id="panelContent"></div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let currentLang = 'ko';
+
+    const map = L.map('map', { zoomControl: false }).setView([38.0, -95.0], 4);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    const tileProviders = {
+        esri_street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' }),
+        esri_light: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles &copy; Esri' }),
+        google_road: L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: 'Map data &copy; Google' }),
+        esri_sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' })
+    };
+
+    let currentTileLayer = tileProviders.esri_street;
+    currentTileLayer.addTo(map);
+
+    function changeBaseMap() {
+        const selected = document.getElementById("mapStyleSelect").value;
+        map.removeLayer(currentTileLayer);
+        currentTileLayer = tileProviders[selected];
+        currentTileLayer.addTo(map);
+    }
+
+    const facilities = [
+        { name: "Ultium Cells #1 (GM-LGES)", nameEn: "Ultium Cells #1 (GM-LGES)", category: "Cell", status: "Operating", state: "OH", city: "Warren", lat: 41.203, lng: -80.815, capa: "40 GWh", chem: "NCMA 파우치 (High-Ni)", niRatio: 0.45, coRatio: 0.08, liRatio: 0.05, note: "북미 러스트벨트 핵심 공정 스크랩 발생 거점", noteEn: "Rust Belt core process scrap source" },
+        { name: "Ultium Cells #2 (GM-LGES)", nameEn: "Ultium Cells #2 (GM-LGES)", category: "Cell", status: "Operating", state: "TN", city: "Spring Hill", lat: 35.751, lng: -86.930, capa: "50 GWh", chem: "NCMA 파우치", niRatio: 0.43, coRatio: 0.07, liRatio: 0.05, note: "테네시 밸류체인 핵심 셀 공장 (가동중)", noteEn: "Tennessee core cell plant (Operating)" },
+        { name: "SK Battery America (SK On)", nameEn: "SK Battery America (SK On)", category: "Cell", status: "Operating", state: "GA", city: "Commerce", lat: 34.228, lng: -83.456, capa: "22 GWh", chem: "High-Ni NCM9", niRatio: 0.48, coRatio: 0.04, liRatio: 0.05, note: "조지아 배터리 벨트 공정 스크랩 원천", noteEn: "Georgia battery belt scrap source" },
+        { name: "BlueOval SK #1, #2 (Ford-SK)", nameEn: "BlueOval SK #1, #2 (Ford-SK)", category: "Cell", status: "Construction", state: "KY", city: "Glendale", lat: 37.601, lng: -85.905, capa: "86 GWh", chem: "NCM 계열", niRatio: 0.40, coRatio: 0.07, liRatio: 0.05, note: "켄터키 초대형 합작 기가팩토리", noteEn: "Kentucky mega joint gigafactory" },
+        { name: "Hyundai-LGES JV (HL-GA)", nameEn: "Hyundai-LGES JV (HL-GA)", category: "Cell", status: "Construction", state: "GA", city: "Bryan County", lat: 32.148, lng: -81.464, capa: "30 GWh", chem: "NCM 파우치", niRatio: 0.42, coRatio: 0.07, liRatio: 0.05, note: "현대차 조지아 메타플랜트 직결 셀 공장", noteEn: "Direct-connected cell plant for HMGMA" },
+        { name: "Tesla Gigafactory Texas", nameEn: "Tesla Gigafactory Texas", category: "Cell", status: "Operating", state: "TX", city: "Austin", lat: 30.222, lng: -97.617, capa: "100 GWh(목표)", chem: "4680 NCM / LFP 혼합", niRatio: 0.35, coRatio: 0.04, liRatio: 0.05, note: "텍사스 핵심 수요처 및 스크랩 발생지", noteEn: "Texas core demand & scrap source" },
+        { name: "Tesla-Panasonic Giga Nevada", nameEn: "Tesla-Panasonic Giga Nevada", category: "Cell", status: "Operating", state: "NV", city: "Sparks", lat: 39.538, lng: -119.440, capa: "39 GWh", chem: "NCA 2170", niRatio: 0.44, coRatio: 0.06, liRatio: 0.05, note: "미 서부 최대 배터리 생산기지", noteEn: "Western US max battery production base" },
+        { name: "LGES Arizona", nameEn: "LGES Arizona", category: "Cell", status: "Construction", state: "AZ", city: "Queen Creek", lat: 33.248, lng: -111.634, capa: "53 GWh", chem: "46시리즈 / LFP ESS", niRatio: 0.30, coRatio: 0.02, liRatio: 0.05, note: "남서부 원통형·ESS 배터리 기지", noteEn: "Southwest cylindrical & ESS battery hub" },
+
+        { name: "LG Chem Tennessee Cathode", nameEn: "LG Chem Tennessee Cathode", category: "Material", status: "Construction", state: "TN", city: "Clarksville", lat: 36.590, lng: -87.359, capa: "60,000 톤/년", chem: "NCMA 양극재", niRatio: 0.65, coRatio: 0.11, liRatio: 0.09, note: "미국 내 최대 규모 양극재 공장 건설중", noteEn: "US largest cathode plant under construction" },
+        { name: "Ultium CAM (POSCO Future M)", nameEn: "Ultium CAM (POSCO Future M)", category: "Material", status: "Operating", state: "QC", city: "Bécancour", lat: 46.380, lng: -72.440, capa: "30,000 톤/년", chem: "NCMA 양극재", niRatio: 0.63, coRatio: 0.10, liRatio: 0.08, note: "북미 USMCA 연계 퀘벡 양극재 기지", noteEn: "USMCA linked Quebec cathode facility" },
+        { name: "EcoPro CAM Canada", nameEn: "EcoPro CAM Canada", category: "Material", status: "Construction", state: "QC", city: "Bécancour", lat: 46.365, lng: -72.460, capa: "45,000 톤/년", chem: "High-Ni NCM", niRatio: 0.68, coRatio: 0.09, liRatio: 0.09, note: "에코프로-포드-SK 퀘벡 양극재 단지", noteEn: "EcoPro-Ford-SK Quebec cathode cluster" },
+
+        { name: "Redwood Tahoe Spoke", nameEn: "Redwood Tahoe Spoke", category: "Spoke", status: "Operating", state: "NV", city: "Sparks", lat: 39.546, lng: -119.520, capa: "20GWh+ 수령", chem: "다양한 Li-ion (블랙매스 고효율)", niRatio: 0.50, coRatio: 0.09, liRatio: 0.07, note: "[문서 반영] 네바다 상업 가동 전처리 거점", noteEn: "[Doc] Nevada commercial operating Spoke" },
+        { name: "Redwood Carolina Spoke", nameEn: "Redwood Carolina Spoke", category: "Spoke", status: "Operating", state: "SC", city: "Ridgeville", lat: 33.095, lng: -80.314, capa: "20,000 톤", chem: "EV 팩 등 Li-ion", niRatio: 0.46, coRatio: 0.08, liRatio: 0.06, note: "[문서 반영] 사우스캐롤라이나 1단계 가동", noteEn: "[Doc] South Carolina Stage 1 operation" },
+        { name: "ABTC Nevada Spoke", nameEn: "ABTC Nevada Spoke", category: "Spoke", status: "Operating", state: "NV", city: "McCarran", lat: 39.520, lng: -119.480, capa: "20,000 톤", chem: "NCM·NCA·LCO", niRatio: 0.48, coRatio: 0.08, liRatio: 0.07, note: "[문서 반영] 미국 배터리 테크놀로지 컴퍼니 상업 가동", noteEn: "[Doc] ABTC commercial operation" },
+        { name: "Blue Whale Materials Spoke", nameEn: "Blue Whale Materials Spoke", category: "Spoke", status: "Construction", state: "OK", city: "Bartlesville", lat: 36.747, lng: -95.980, capa: "20,000 톤", chem: "Ni·Co·Li 함유 Li-ion", niRatio: 0.45, coRatio: 0.07, liRatio: 0.06, note: "[문서 반영] 증설라인 시운전 중", noteEn: "[Doc] Expansion line trial operation" },
+        { name: "Princeton NuEnergy Spoke", nameEn: "Princeton NuEnergy Spoke", category: "Spoke", status: "Operating", state: "SC", city: "Chester", lat: 34.704, lng: -81.212, capa: "5,000톤 (15,000톤 증설목표)", chem: "NCM·LFP (직접재생)", niRatio: 0.40, coRatio: 0.06, liRatio: 0.08, note: "[문서 반영] 상업 가동 중", noteEn: "[Doc] Commercial operation" },
+        { name: "Lithion Technologies Spoke", nameEn: "Lithion Technologies Spoke", category: "Spoke", status: "Operating", state: "QC", city: "Saint-Bruno", lat: 45.526, lng: -73.342, capa: "10,000~20,000 톤", chem: "EV 배터리·제조불량품", niRatio: 0.43, coRatio: 0.07, liRatio: 0.06, note: "[문서 반영] 상업 가동 중", noteEn: "[Doc] Commercial operation in QC" },
+        { name: "구 Li-Cycle Arizona Spoke", nameEn: "Ex-Li-Cycle Arizona Spoke", category: "Spoke", status: "Construction", state: "AZ", city: "Gilbert", lat: 33.352, lng: -111.789, capa: "약 10,000 톤", chem: "NMC·NCA·LCO", niRatio: 0.42, coRatio: 0.07, liRatio: 0.06, note: "[문서 반영] 인수 후 현장 재가동 확인 필요", noteEn: "[Doc] Post-acquisition review required" },
+        { name: "구 Li-Cycle Alabama Spoke", nameEn: "Ex-Li-Cycle Alabama Spoke", category: "Spoke", status: "Construction", state: "AL", city: "Tuscaloosa", lat: 33.209, lng: -87.569, capa: "약 10,000 톤", chem: "NMC·NCA·LCO", niRatio: 0.42, coRatio: 0.07, liRatio: 0.06, note: "[문서 반영] 인수 후 상태 확인 필요", noteEn: "[Doc] Post-acquisition status check" },
+        { name: "구 Li-Cycle Ontario Spoke", nameEn: "Ex-Li-Cycle Ontario Spoke", category: "Spoke", status: "Construction", state: "ON", city: "Kingston", lat: 44.231, lng: -76.486, capa: "약 5,000 톤", chem: "NMC·NCA·LCO", niRatio: 0.42, coRatio: 0.07, liRatio: 0.06, note: "[문서 반영] 캐나다 온타리오, 재가동 확인 필요", noteEn: "[Doc] Ontario Spoke restart check" },
+
+        { name: "Redwood Tahoe Hub (통합)", nameEn: "Redwood Tahoe Hub (Integrated)", category: "Hub", status: "Operating", state: "NV", city: "Sparks", lat: 39.530, lng: -119.500, capa: "대규모 제련·정련", chem: "Ni·Co·Li 최종회수 (습식제련)", niRatio: 0.95, coRatio: 0.18, liRatio: 0.18, note: "[문서 반영] 상업 가동 중인 대표 통합 Hub", noteEn: "[Doc] Commercial operating integrated Hub" },
+        { name: "Nth Cycle Fairfield Hub", nameEn: "Nth Cycle Fairfield Hub", category: "Hub", status: "Operating", state: "OH", city: "Fairfield", lat: 39.346, lng: -84.555, capa: "전기화학적 정련", chem: "Ni 중심 MHP 정련", niRatio: 0.90, coRatio: 0.10, liRatio: 0.05, note: "[문서 반영] 전기화학적 수용액 정련 가동 중", noteEn: "[Doc] Electrochemical refining operating" },
+        { name: "R3 Lithium Hub", nameEn: "R3 Lithium Hub", category: "Hub", status: "Operating", state: "GA", city: "Covington", lat: 33.580, lng: -83.840, capa: "리튬 정련", chem: "탄산리튬 고순도 정련", niRatio: 0.10, coRatio: 0.02, liRatio: 0.22, note: "[문서 반영] 2026년 9월 운영 개시 발표", noteEn: "[Doc] Operations launched Sept 2026" },
+        { name: "구 Li-Cycle Rochester Hub", nameEn: "Ex-Li-Cycle Rochester Hub", category: "Hub", status: "Construction", state: "NY", city: "Rochester", lat: 43.198, lng: -77.648, capa: "블랙매스 35,000 톤/년", chem: "습식제련 Hub", niRatio: 0.80, coRatio: 0.15, liRatio: 0.15, note: "[문서 반영] 중단·보전 상태 (과거 설계능력 재검증 필요)", noteEn: "[Doc] Suspended / preservation state" },
+        { name: "Lithion Hydromet Hub", nameEn: "Lithion Hydromet Hub", category: "Hub", status: "Construction", state: "QC", city: "Québec", lat: 46.813, lng: -71.208, capa: "계획 규모", chem: "습식제련 정련", niRatio: 0.75, coRatio: 0.14, liRatio: 0.14, note: "[문서 반영] 계획 단계 (상업 가동 미확인)", noteEn: "[Doc] Planning stage (Unverified)" }
+    ];
+
+    const iraZones = [
+        { state: "Texas (휴스턴 / 오스틴 권역)", stateEn: "Texas (Houston/Austin)", lat: 30.0, lng: -96.2, radius: 220000, color: "#2563eb", iraBenefit: "IRA 45X + 법인세 0%", grant: "Texas Enterprise Fund", rcraPermit: "우수", feocNote: "블랙매스 글로벌 수출입 및 삼각무역 최적", feocNoteEn: "Optimized for global black mass trade & export" },
+        { state: "Georgia (배터리 벨트)", stateEn: "Georgia (Battery Belt)", lat: 33.4, lng: -83.2, radius: 190000, color: "#16a34a", iraBenefit: "IRA 45X/48C 세액공제", grant: "Quick Start 인력훈련", rcraPermit: "보통", feocNote: "현대·SK 인근 공정 스크랩 조달 1순위", feocNoteEn: "Prime location for Hyundai/SK scrap sourcing" },
+        { state: "Kentucky & Tennessee", stateEn: "Kentucky & Tennessee", lat: 36.4, lng: -86.8, radius: 190000, color: "#7c3aed", iraBenefit: "IRA 45X 세액공제", grant: "TVA 저렴한 전력", rcraPermit: "보통", feocNote: "북미 기가팩토리 70% 커버 물류 요충지", feocNoteEn: "Covers 70% of North American gigafactories" },
+        { state: "Nevada (리노 / 스파크스 권역)", stateEn: "Nevada (Reno/Sparks)", lat: 39.5, lng: -119.5, radius: 180000, color: "#ea580c", iraBenefit: "IRA 45X + 주 세제 혜택", grant: "GOED Grant", rcraPermit: "우수", feocNote: "Redwood, ABTC 및 테슬라 연계 서부 허브", feocNoteEn: "Western hub linked to Redwood, ABTC & Tesla" },
+        { state: "Michigan (디트로이트 / 러스트벨트)", stateEn: "Michigan (Rust Belt)", lat: 42.5, lng: -84.0, radius: 190000, color: "#0891b2", iraBenefit: "IRA 48C 보너스 (+10%)", grant: "SOAR Fund", rcraPermit: "보통", feocNote: "GM·포드 본진 및 초기 E-Scrap 대량 발생지", feocNoteEn: "GM/Ford HQ & massive early E-Scrap source" },
+        { state: "Arizona (피닉스 / 퀸크릭 권역)", stateEn: "Arizona (Phoenix)", lat: 33.3, lng: -111.7, radius: 170000, color: "#ca8a04", iraBenefit: "IRA 45X 세액공제", grant: "Arizona Competes Fund", rcraPermit: "보통", feocNote: "LG엔솔 애리조나 및 남서부 원통형·ESS 거점", feocNoteEn: "LGES Arizona & southwest cylindrical/ESS base" },
+        { state: "Canada - Quebec & Ontario", stateEn: "Canada - Quebec & Ontario", lat: 45.8, lng: -74.0, radius: 240000, color: "#059669", iraBenefit: "USMCA 연계 동일 혜택 + 캐나다 30% ITC", grant: "Federal Strategic Fund", rcraPermit: "우수", feocNote: "에코프로·포스코·리튬온 등 캐나다 밸류체인", feocNoteEn: "EcoPro, Posco, Lithion Canadian supply chain" }
+    ];
+
+    let markersLayer = L.layerGroup().addTo(map);
+    let simCircleLayer = L.layerGroup().addTo(map);
+    let iraLayerGroup = L.layerGroup();
+    let isSimMode = false, isDarkMode = false;
+    let currentCaptured300 = [], currentCaptured650 = [];
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'ko' ? 'en' : 'ko';
+        const langBtn = document.getElementById("langBtn");
+        langBtn.innerText = currentLang === 'ko' ? "🌐 English" : "🌐 한국어";
+
+        document.getElementById("uiTitle").innerText = currentLang === 'ko' ? "⚡ 북미 배터리 SCM & Spoke-Hub 전략지도" : "⚡ North America Battery SCM & Spoke-Hub Map";
+        document.getElementById("uiIraText").innerText = currentLang === 'ko' ? "🏛️ IRA & 캐나다 인센티브 레이어" : "🏛️ IRA & Canada Incentive Layer";
+        document.getElementById("simBtn").innerText = currentLang === 'ko' ? (isSimMode ? "🎯 반경/물류비 시뮬레이션: ON (지도 클릭)" : "🎯 반경/물류비 시뮬레이션: OFF") : (isSimMode ? "🎯 Logistics Sim: ON (Click Map)" : "🎯 Logistics Sim: OFF");
+        document.getElementById("darkBtn").innerText = currentLang === 'ko' ? (isDarkMode ? "☀️ 라이트모드" : "🌙 다크모드") : (isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode");
+        document.getElementById("resetBtn").innerText = currentLang === 'ko' ? "🔄 초기화" : "🔄 Reset";
+        document.getElementById("searchInput").placeholder = currentLang === 'ko' ? "기업명, 주, 화학계 검색..." : "Search company, state, chem...";
+
+        document.getElementById("legTitle").innerText = currentLang === 'ko' ? "📌 밸류체인 및 시설 구분" : "📌 Value Chain & Facilities";
+        document.getElementById("legCell").innerText = currentLang === 'ko' ? "배터리 셀 (Cell Gigafactory)" : "Cell Gigafactory";
+        document.getElementById("legMat").innerText = currentLang === 'ko' ? "양극재/전구체 (Cathode/Material)" : "Cathode / Material";
+        document.getElementById("legSpoke").innerHTML = currentLang === 'ko' ? "리사이클링 <b>Spoke</b> (전처리)" : "Recycling <b>Spoke</b> (Pretreat)";
+        document.getElementById("legHub").innerHTML = currentLang === 'ko' ? "리사이클링 <b>Hub</b> (정련)" : "Recycling <b>Hub</b> (Refining)";
+
+        renderMarkers();
+        if (document.getElementById("iraLayerToggle").checked) toggleIraLayer();
+    }
+
+    function createCustomIcon(category, status) {
+        let bgColor = "#ef4444", shapeStyle = "border-radius: 50%;";
+        if (category === "Cell") { bgColor = "#ef4444"; }
+        else if (category === "Material") { bgColor = "#eab308"; shapeStyle = "transform: rotate(45deg); border-radius: 2px;"; }
+        else if (category === "Spoke") { bgColor = "#10b981"; }
+        else if (category === "Hub") { bgColor = "#3b82f6"; shapeStyle = "border-radius: 3px;"; }
+
+        const borderStyle = status === "Operating" ? "2px solid #ffffff" : "2px dashed #0f172a";
+        const html = `<div style="width:14px; height:14px; background:${bgColor}; ${shapeStyle} border:${borderStyle}; box-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>`;
+        return L.divIcon({ className: "custom-div-icon", html: html, iconSize: [18, 18], iconAnchor: [9, 9] });
+    }
+
+    function getDistanceKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // ★ 단가 변경 시 수식 및 계산 내역을 투명하게 팝업창에 표기 ★
+    function onPriceInput() {
+        const pNi = parseFloat(document.getElementById("priceNi").value) || 17000;
+        const pCo = parseFloat(document.getElementById("priceCo").value) || 28000;
+        const pLi = parseFloat(document.getElementById("priceLi").value) || 12500;
+
+        facilities.forEach(fac => {
+            if (fac._leafletMarker && fac._leafletMarker.isPopupOpen()) {
+                const calcNi = Math.round(pNi * fac.niRatio);
+                const calcCo = Math.round(pCo * fac.coRatio);
+                const calcLi = Math.round(pLi * fac.liRatio);
+                const totalVal = calcNi + calcCo + calcLi;
+
+                const nameTxt = currentLang === 'ko' ? fac.name : fac.nameEn;
+                const statusTxt = currentLang === 'ko' 
+                    ? (fac.status === 'Operating' ? '🟢 상업 가동중' : '🚧 건설/시운전/중단') 
+                    : (fac.status === 'Operating' ? '🟢 Commercial Operating' : '🚧 Construction/Trial/Hold');
+                const noteTxt = currentLang === 'ko' ? fac.note : fac.noteEn;
+
+                const newContent = `
+                    <div style="font-size:12px; line-height:1.5; min-width:270px;">
+                        <div style="font-weight:800; font-size:13px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">${nameTxt}</div>
+                        <div><b>${currentLang === 'ko' ? '구분' : 'Category'}:</b> ${fac.category} (${statusTxt})</div>
+                        <div><b>${currentLang === 'ko' ? '위치' : 'Location'}:</b> ${fac.city}, ${fac.state}</div>
+                        <div><b>${currentLang === 'ko' ? '처리능력' : 'Capacity'}:</b> ${fac.capa}</div>
+                        <div><b>${currentLang === 'ko' ? '화학계' : 'Chemistry'}:</b> <span style="color:#2563eb; font-weight:700;">${fac.chem}</span></div>
+                        <div style="background:#f1f5f9; padding:6px; border-radius:4px; margin-top:5px; font-size:11px;">
+                            💎 <b>${currentLang === 'ko' ? '원료 1톤당 환산 가치' : 'Valuation per Ton'}:</b> <span style="color:#dc2626; font-weight:800;">$${totalVal.toLocaleString()} / ton</span><br>
+                            • Ni ($${pNi.toLocaleString()} × ${fac.niRatio*100}%): <b>$${calcNi.toLocaleString()}</b><br>
+                            • Co ($${pCo.toLocaleString()} × ${fac.coRatio*100}%): <b>$${calcCo.toLocaleString()}</b><br>
+                            • Li ($${pLi.toLocaleString()} × ${fac.liRatio*100}%): <b>$${calcLi.toLocaleString()}</b>
+                        </div>
+                        <div style="margin-top:4px; color:#475569; font-size:11px;">💡 ${noteTxt}</div>
+                        <button onclick="runRadiusAnalysis(${fac.lat}, ${fac.lng}, '${nameTxt.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; background:#1e293b; color:#fff; border:none; padding:6px; border-radius:4px; cursor:pointer; font-weight:700;">🚚 ${currentLang === 'ko' ? '반경·물류비 분석' : 'Radius & Logistics Analysis'}</button>
+                    </div>
+                `;
+                fac._leafletMarker.setPopupContent(newContent);
+            }
+        });
+    }
+
+    function renderMarkers() {
+        markersLayer.clearLayers();
+        const catFilter = document.getElementById("filterCategory").value;
+        const statFilter = document.getElementById("filterStatus").value;
+        const keyword = document.getElementById("searchInput").value.toLowerCase();
+
+        const pNi = parseFloat(document.getElementById("priceNi").value) || 17000;
+        const pCo = parseFloat(document.getElementById("priceCo").value) || 28000;
+        const pLi = parseFloat(document.getElementById("priceLi").value) || 12500;
+
+        facilities.forEach(fac => {
+            if (catFilter !== "ALL" && fac.category !== catFilter) return;
+            if (statFilter !== "ALL" && fac.status !== statFilter) return;
+            const searchTarget = (fac.name + fac.state + fac.chem + fac.note).toLowerCase();
+            if (keyword && !searchTarget.includes(keyword)) return;
+
+            const marker = L.marker([fac.lat, fac.lng], { icon: createCustomIcon(fac.category, fac.status) });
+            fac._leafletMarker = marker;
+            
+            const nameTxt = currentLang === 'ko' ? fac.name : fac.nameEn;
+            const statusTxt = currentLang === 'ko' 
+                ? (fac.status === 'Operating' ? '🟢 상업 가동중' : '🚧 건설/시운전/중단') 
+                : (fac.status === 'Operating' ? '🟢 Commercial Operating' : '🚧 Construction/Trial/Hold');
+            const noteTxt = currentLang === 'ko' ? fac.note : fac.noteEn;
+
+            const calcNi = Math.round(pNi * fac.niRatio);
+            const calcCo = Math.round(pCo * fac.coRatio);
+            const calcLi = Math.round(pLi * fac.liRatio);
+            const totalVal = calcNi + calcCo + calcLi;
+
+            marker.bindPopup(`
+                <div style="font-size:12px; line-height:1.5; min-width:270px;">
+                    <div style="font-weight:800; font-size:13px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">${nameTxt}</div>
+                    <div><b>${currentLang === 'ko' ? '구분' : 'Category'}:</b> ${fac.category} (${statusTxt})</div>
+                    <div><b>${currentLang === 'ko' ? '위치' : 'Location'}:</b> ${fac.city}, ${fac.state}</div>
+                    <div><b>${currentLang === 'ko' ? '처리능력' : 'Capacity'}:</b> ${fac.capa}</div>
+                    <div><b>${currentLang === 'ko' ? '화학계' : 'Chemistry'}:</b> <span style="color:#2563eb; font-weight:700;">${fac.chem}</span></div>
+                    <div style="background:#f1f5f9; padding:6px; border-radius:4px; margin-top:5px; font-size:11px;">
+                        💎 <b>${currentLang === 'ko' ? '원료 1톤당 환산 가치' : 'Valuation per Ton'}:</b> <span style="color:#dc2626; font-weight:800;">$${totalVal.toLocaleString()} / ton</span><br>
+                        • Ni ($${pNi.toLocaleString()} × ${fac.niRatio*100}%): <b>$${calcNi.toLocaleString()}</b><br>
+                        • Co ($${pCo.toLocaleString()} × ${fac.coRatio*100}%): <b>$${calcCo.toLocaleString()}</b><br>
+                        • Li ($${pLi.toLocaleString()} × ${fac.liRatio*100}%): <b>$${calcLi.toLocaleString()}</b>
+                    </div>
+                    <div style="margin-top:4px; color:#475569; font-size:11px;">💡 ${noteTxt}</div>
+                    <button onclick="runRadiusAnalysis(${fac.lat}, ${fac.lng}, '${nameTxt.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; background:#1e293b; color:#fff; border:none; padding:6px; border-radius:4px; cursor:pointer; font-weight:700;">🚚 ${currentLang === 'ko' ? '반경·물류비 분석' : 'Radius & Logistics Analysis'}</button>
+                </div>
+            `);
+            markersLayer.addLayer(marker);
+        });
+    }
+
+    function runRadiusAnalysis(lat, lng, titleName) {
+        simCircleLayer.clearLayers();
+        L.circle([lat, lng], { radius: 650000, color: '#f59e0b', weight: 2, dashArray: '6, 6', fillColor: '#fef3c7', fillOpacity: 0.18 }).addTo(simCircleLayer);
+        L.circle([lat, lng], { radius: 300000, color: '#10b981', weight: 2, fillColor: '#d1fae5', fillOpacity: 0.28 }).addTo(simCircleLayer);
+        L.circleMarker([lat, lng], { radius: 6, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1 }).addTo(simCircleLayer);
+
+        currentCaptured300 = []; currentCaptured650 = [];
+        facilities.forEach(fac => {
+            const d = getDistanceKm(lat, lng, fac.lat, fac.lng);
+            if (d > 1 && d <= 300) currentCaptured300.push({ ...fac, dist: Math.round(d) });
+            else if (d > 300 && d <= 650) currentCaptured650.push({ ...fac, dist: Math.round(d) });
+        });
+
+        currentCaptured300.sort((a,b)=>a.dist-b.dist); currentCaptured650.sort((a,b)=>a.dist-b.dist);
+        document.getElementById("panelTitle").innerText = `📍 ${titleName}`;
+        document.getElementById("analysisPanel").style.display = "block";
+        updateLogisticsCost();
+        renderCapturedList();
+    }
+
+    function updateLogisticsCost() {
+        const rate = parseFloat(document.getElementById("rateInput").value) || 0.18;
+        const annualTons = parseFloat(document.getElementById("tonInput").value) || 10000;
+        const hazmat = parseFloat(document.getElementById("hazmatFactor").value) || 1.0;
+
+        const avgDist300 = currentCaptured300.length > 0 ? Math.round((currentCaptured300.reduce((s,x)=>s+x.dist,0)/currentCaptured300.length)*1.2) : 240;
+        const avgDist650 = currentCaptured650.length > 0 ? Math.round((currentCaptured650.reduce((s,x)=>s+x.dist,0)/currentCaptured650.length)*1.2) : 540;
+
+        const cost300 = Math.round(avgDist300 * rate * hazmat), total300 = Math.round((cost300 * annualTons)/10000);
+        const cost650 = Math.round(avgDist650 * rate * hazmat), total650 = Math.round((cost650 * annualTons)/10000);
+
+        if (currentLang === 'ko') {
+            document.getElementById("costResultBox").innerHTML = `
+                <div style="font-size:11px; margin-bottom:5px;">🟢 <b>300km 셔틀권:</b> 약 ${avgDist300}km ➔ $${cost300}/톤 (연간 약 <span class="cost-highlight">$${total300.toLocaleString()}만불</span>)</div>
+                <div style="font-size:11px;">🟠 <b>650km 한계권:</b> 약 ${avgDist650}km ➔ $${cost650}/톤 (연간 약 <span class="cost-highlight">$${total650.toLocaleString()}만불</span>)</div>
+            `;
+        } else {
+            document.getElementById("costResultBox").innerHTML = `
+                <div style="font-size:11px; margin-bottom:5px;">🟢 <b>300km Shuttle:</b> ~${avgDist300}km ➔ $${cost300}/ton (Est. <span class="cost-highlight">$${total300.toLocaleString()}M/yr</span>)</div>
+                <div style="font-size:11px;">🟠 <b>650km Limit:</b> ~${avgDist650}km ➔ $${cost650}/ton (Est. <span class="cost-highlight">$${total650.toLocaleString()}M/yr</span>)</div>
+            `;
+        }
+    }
+
+    function renderCapturedList() {
+        const title300 = currentLang === 'ko' ? `🟢 300km 이내 셔틀권: ${currentCaptured300.length}개소` : `🟢 Within 300km Shuttle: ${currentCaptured300.length}`;
+        const title650 = currentLang === 'ko' ? `🟠 300~650km 한계권: ${currentCaptured650.length}개소` : `🟠 300~650km Limit: ${currentCaptured650.length}`;
+
+        let html = `<div class="zone-badge-300">${title300}</div>`;
+        currentCaptured300.forEach(f => {
+            const fName = currentLang === 'ko' ? f.name : f.nameEn;
+            html += `<div class="fac-list-item" onclick="map.setView([${f.lat}, ${f.lng}], 7)"><span><b>[${f.category}]</b> ${fName} (${f.state})</span><span style="color:#166534; font-weight:700;">${f.dist}km</span></div>`;
+        });
+        html += `<div class="zone-badge-650">${title650}</div>`;
+        currentCaptured650.forEach(f => {
+            const fName = currentLang === 'ko' ? f.name : f.nameEn;
+            html += `<div class="fac-list-item" onclick="map.setView([${f.lat}, ${f.lng}], 7)"><span><b>[${f.category}]</b> ${fName} (${f.state})</span><span style="color:#854d0e; font-weight:700;">${f.dist}km</span></div>`;
+        });
+        document.getElementById("panelContent").innerHTML = html;
+    }
+
+    function toggleIraLayer() {
+        const checked = document.getElementById("iraLayerToggle").checked;
+        iraLayerGroup.clearLayers();
+        if (!checked) { map.removeLayer(iraLayerGroup); return; }
+
+        iraZones.forEach(zone => {
+            const circle = L.circle([zone.lat, zone.lng], { radius: zone.radius, color: zone.color, weight: 2, fillColor: zone.color, fillOpacity: 0.15 });
+            const zState = currentLang === 'ko' ? zone.state : zone.stateEn;
+            const zNote = currentLang === 'ko' ? zone.feocNote : zone.feocNoteEn;
+
+            circle.bindPopup(`
+                <div style="font-size:12px; line-height:1.5; min-width:230px;">
+                    <div style="font-weight:800; font-size:13px; color:#1e3a8a; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">🏛️ ${zState}</div>
+                    <div><b>💰 ${currentLang === 'ko' ? '인센티브' : 'Incentive'}:</b> ${zone.iraBenefit}</div>
+                    <div><b>🎁 ${currentLang === 'ko' ? '보조금' : 'Grant'}:</b> ${zone.grant}</div>
+                    <div style="margin-top:6px; background:#f1f5f9; padding:5px; border-radius:4px; font-size:11px;">📌 <b>${currentLang === 'ko' ? '전략 포인트' : 'Strategy'}:</b> ${zNote}</div>
+                </div>
+            `);
+            iraLayerGroup.addLayer(circle);
+
+            const labelIcon = L.divIcon({
+                className: "",
+                html: `<div class="ira-label">🏛️ ${zState.split(' ')[0]}</div>`,
+                iconSize: [110, 22],
+                iconAnchor: [55, 11]
+            });
+            const labelMarker = L.marker([zone.lat, zone.lng], { icon: labelIcon });
+            labelMarker.bindPopup(circle.getPopup());
+            iraLayerGroup.addLayer(labelMarker);
+        });
+        iraLayerGroup.addTo(map);
+    }
+
+    function toggleSimMode() {
+        isSimMode = !isSimMode;
+        const btn = document.getElementById("simBtn");
+        if (isSimMode) { 
+            btn.innerText = currentLang === 'ko' ? "🎯 반경/물류비 시뮬레이션: ON (지도 클릭)" : "🎯 Logistics Sim: ON (Click Map)"; 
+            btn.classList.add("btn-active"); 
+        } else { 
+            btn.innerText = currentLang === 'ko' ? "🎯 반경/물류비 시뮬레이션: OFF" : "🎯 Logistics Sim: OFF"; 
+            btn.classList.remove("btn-active"); 
+        }
+    }
+
+    map.on('click', function(e) {
+        if (!isSimMode) return;
+        runRadiusAnalysis(e.latlng.lat.toFixed(3), e.latlng.lng.toFixed(3), currentLang === 'ko' ? '신규 후보지' : 'New Candidate');
+    });
+
+    function closePanel() { document.getElementById("analysisPanel").style.display = "none"; simCircleLayer.clearLayers(); }
+    function toggleDarkMode() { 
+        isDarkMode = !isDarkMode; 
+        document.getElementById("map").classList.toggle("dark-mode-map", isDarkMode);
+        document.getElementById("darkBtn").innerText = currentLang === 'ko' ? (isDarkMode ? "☀️ 라이트모드" : "🌙 다크모드") : (isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode");
+    }
+    function resetMap() { document.getElementById("filterCategory").value = "ALL"; document.getElementById("filterStatus").value = "ALL"; document.getElementById("searchInput").value = ""; closePanel(); renderMarkers(); map.setView([38.0, -95.0], 4); }
+
+    renderMarkers();
+</script>
+</body>
+</html>
