@@ -1,756 +1,1599 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOLION 북미 거래·입지 대시보드 v8.0</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        body { margin: 0; padding: 0; font-family: 'Malgun Gothic', -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
-        #map { width: 100vw; height: 100vh; background: #cbd5e1; }
-
-        .dark-mode-map { background: #0b0f19 !important; }
-        .dark-mode-map .leaflet-tile-pane {
-            filter: brightness(0.85) invert(1) contrast(1.3) hue-rotate(200deg);
-        }
-
-        .control-box {
-            position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.96); padding: 10px 14px; border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.18); border: 1px solid #cbd5e1;
-            display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: fit-content; max-width: 96vw;
-        }
-        .title-badge {
-            font-weight: 800; font-size: 14px; color: #0f172a; margin-right: 4px;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap;
-        }
-        .ver-tag { background: #2563eb; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-        select, input[type="text"], input[type="number"], button {
-            padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
-            font-size: 11px; font-weight: 600; background: #fff; color: #1e293b;
-        }
-        button { cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        button:hover { background: #f1f5f9; }
-        .btn-primary { background: #1e293b; color: #fff; border-color: #1e293b; }
-        .btn-primary:hover { background: #334155; }
-        .btn-active { background: #dc2626 !important; color: #fff !important; border-color: #dc2626 !important; }
-        .btn-lang { background: #059669 !important; color: #fff !important; border-color: #059669 !important; }
-        .btn-route-katy { background: #d97706; color: #fff; border-color: #d97706; }
-        .btn-route-torrance { background: #2563eb; color: #fff; border-color: #2563eb; }
-        .btn-rail { background: #7c3aed; color: #fff; border-color: #7c3aed; }
-        
-        .layer-group-box {
-            display: flex; gap: 10px; align-items: center; background: #f1f5f9;
-            border: 1px solid #94a3b8; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #0f172a;
-        }
-        .layer-group-box label { cursor: pointer; display: flex; align-items: center; gap: 3px; }
-
-        .metal-price-box {
-            display: flex; align-items: center; gap: 4px; background: #f8fafc;
-            border: 1px solid #94a3b8; padding: 3px 6px; border-radius: 6px; font-size: 11px; font-weight: 700;
-        }
-        .metal-price-box input { width: 45px; text-align: right; font-weight: bold; padding: 2px 3px; }
-        .fuel-input { width: 45px; text-align: center; font-weight: 700; color: #b45309; background: #fffbeb; }
-
-        .legend-box {
-            position: absolute; bottom: 20px; left: 12px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.96); padding: 12px 15px; border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
-            font-size: 11px; color: #1e293b; min-width: 260px; max-height: 80vh; overflow-y: auto;
-        }
-        .legend-title { font-weight: 800; margin-bottom: 8px; font-size: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-weight: 600; }
-        
-        /* 고유 심볼 정의 (겹침 방지) */
-        .marker-icon { width: 14px; height: 14px; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-        .icon-cell { background: #ef4444; border-radius: 50%; } /* 빨간색 원: 셀 */
-        .icon-material { background: #eab308; transform: rotate(45deg); border-radius: 2px; } /* 노란색 다이아몬드: 소재 */
-        .icon-spoke { background: #10b981; border-radius: 50%; } /* 초록색 원: Spoke */
-        .icon-hub { background: #3b82f6; border-radius: 3px; } /* 파란색 사각형: Hub */
-        .icon-office { background: #1d4ed8; border-radius: 2px; width: 13px; height: 13px; } /* 진한 남색 사각형: 오피스 */
-        .icon-residence { background: #8b5cf6; border-radius: 50%; width: 13px; height: 13px; } /* 보라색 원: 주거지 */
-        .icon-port { background: #f97316; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); width: 14px; height: 14px; border: none; } /* 주황색 삼각형: 항만 */
-        .icon-warehouse { background: #06b6d4; border-radius: 2px; width: 13px; height: 13px; } /* 청록색 사각형: 3PL/창고 */
-
-        .analysis-panel {
-            position: absolute; top: 75px; right: 12px; z-index: 1000;
-            width: 375px; max-height: 82vh; overflow-y: auto;
-            background: rgba(255, 255, 255, 0.97); padding: 15px; border-radius: 10px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.18); border: 1px solid #cbd5e1;
-            display: none; font-size: 12px; color: #1e293b;
-        }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 10px; }
-        .panel-title { font-weight: 800; font-size: 14px; color: #0f172a; }
-        .close-btn { background: none; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: #64748b; }
-        
-        .calc-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
-        .calc-title { font-weight: 800; color: #1e3a8a; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; }
-        .calc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
-        .calc-row input { width: 65px; padding: 2px 4px; text-align: right; border: 1px solid #94a3b8; border-radius: 4px; font-weight: bold; }
-        .calc-result { background: #eff6ff; border-top: 1px dashed #93c5fd; padding-top: 8px; margin-top: 6px; }
-        .cost-highlight { color: #dc2626; font-weight: 800; font-size: 13px; }
-
-        .zone-badge-300 { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 11px; display: inline-block; margin-bottom: 6px; }
-        .zone-badge-650 { background: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 11px; display: inline-block; margin: 10px 0 6px 0; }
-        .fac-list-item { padding: 5px 6px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
-        .fac-list-item:hover { background: #f8fafc; cursor: pointer; }
-
-        .ira-label {
-            background: rgba(30, 58, 138, 0.90); color: #fff; padding: 3px 6px;
-            border-radius: 5px; font-size: 10px; font-weight: 700; text-align: center;
-            border: 1px solid #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,0.35); white-space: nowrap;
-        }
-        .realtor-btn {
-            display: block; width: 100%; text-align: center; background: #2563eb; color: #fff;
-            padding: 5px 0; border-radius: 4px; font-weight: 700; text-decoration: none; margin-top: 6px; font-size: 11px;
-        }
-        .realtor-btn:hover { background: #1d4ed8; }
-        .distance-badge {
-            background: #eff6ff; color: #1d4ed8; padding: 3px 5px; border-radius: 4px; font-weight: 700; margin-bottom: 5px; display: inline-block; font-size: 10px;
-        }
-        .route-info-box {
-            background: #f8fafc; border-left: 3px solid #2563eb; padding: 6px; margin-top: 6px; font-size: 11px; line-height: 1.4;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SOLION 북미 거래·입지 대시보드 v8.0</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+body{
+  margin:0;padding:0;
+  font-family:"Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+  overflow:hidden;color:#1e293b
+}
+#map{width:100vw;height:100vh;background:#cbd5e1}
+.dark-mode-map .leaflet-tile-pane{
+  filter:brightness(.85) invert(1) contrast(1.3) hue-rotate(200deg)
+}
+.control-box{
+  position:absolute;top:12px;left:12px;right:12px;z-index:1000;
+  background:rgba(255,255,255,.97);
+  padding:10px 14px;border-radius:10px;
+  box-shadow:0 4px 15px #0003;border:1px solid #cbd5e1;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  width:fit-content;max-width:calc(100vw - 56px)
+}
+.title-badge{
+  font-weight:800;font-size:14px;
+  display:flex;align-items:center;gap:6px;white-space:nowrap
+}
+.ver-tag{
+  background:#2563eb;color:white;font-size:11px;
+  padding:2px 6px;border-radius:4px
+}
+button,input,select,textarea{font-family:inherit;box-sizing:border-box}
+select,input[type=text],input[type=number],input[type=url],input[type=date],button{
+  padding:5px 8px;border-radius:6px;border:1px solid #cbd5e1;
+  font-size:11px;font-weight:600;background:white;color:#1e293b
+}
+button{cursor:pointer;transition:background .2s}
+button:hover{background:#f1f5f9}
+.btn-primary{background:#1e293b;color:white;border-color:#1e293b}
+.btn-primary:hover{background:#334155}
+.btn-active{background:#dc2626!important;color:white!important}
+.btn-lang{background:#059669!important;color:white!important}
+.btn-route-katy{background:#d97706;color:white}
+.btn-route-torrance{background:#2563eb;color:white}
+.btn-rail{background:#7c3aed;color:white}
+.layer-group-box{
+  display:flex;gap:10px;align-items:center;background:#f1f5f9;
+  border:1px solid #94a3b8;padding:4px 10px;
+  border-radius:6px;font-size:11px;font-weight:700;color:#0f172a
+}
+.layer-group-box label{display:flex;align-items:center;gap:3px;cursor:pointer}
+.metal-price-box{
+  display:flex;align-items:center;gap:4px;background:#f8fafc;
+  border:1px solid #94a3b8;padding:3px 6px;
+  border-radius:6px;font-size:11px;font-weight:700
+}
+.metal-price-box input{width:65px;text-align:right;padding:2px 3px}
+.fuel-input{width:60px;text-align:center}
+.tools{
+  position:absolute;top:155px;left:12px;width:340px;
+  max-height:calc(100vh - 190px);overflow:auto;z-index:1000;
+  background:white;border:1px solid #cbd5e1;border-radius:10px;
+  box-shadow:0 4px 16px #0002;padding:12px;font-size:12px;
+  box-sizing:border-box
+}
+.tools summary{cursor:pointer;font-weight:800;padding:8px 0;color:#1e3a8a}
+.tools label{display:block;margin:7px 0}
+.tools input,.tools select{max-width:100%}
+.tools select{display:block;width:100%;margin-top:4px}
+.tools input[type=checkbox]{vertical-align:middle}
+.tools textarea{border:1px solid #cbd5e1;border-radius:5px;padding:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid input{display:block;width:100%;margin-top:4px}
+.muted{font-size:11px;color:#64748b;line-height:1.5}
+.result{background:#eff6ff;padding:10px;border-radius:6px;line-height:1.7;margin:8px 0}
+.notice{background:#fff7ed;color:#9a3412;padding:8px;border-radius:6px;line-height:1.5;margin:8px 0}
+#facilityList button{display:block;text-align:left;width:100%;margin:4px 0;white-space:normal}
+.analysis-panel{
+  position:absolute;top:155px;right:12px;z-index:1100;
+  width:375px;max-height:calc(100vh - 190px);overflow:auto;
+  background:rgba(255,255,255,.98);padding:15px;border-radius:10px;
+  box-shadow:0 6px 20px #0003;border:1px solid #cbd5e1;
+  display:none;font-size:12px
+}
+.panel-header{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:2px solid #1e293b;padding-bottom:8px;margin-bottom:10px
+}
+.panel-title{font-weight:800;font-size:14px}
+.close-btn{background:none;border:none;font-size:18px}
+.calc-box{background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin-bottom:12px}
+.calc-title{font-weight:800;color:#1e3a8a;margin-bottom:8px}
+.calc-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:11px}
+.calc-row input{width:80px;text-align:right}
+.calc-row select{max-width:205px}
+.calc-result{background:#eff6ff;border-top:1px dashed #93c5fd;padding-top:8px;margin-top:6px;line-height:1.7}
+.fac-list-item{padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:11px}
+.route-info-box{background:#f8fafc;border-left:3px solid #2563eb;padding:8px;margin-top:6px;font-size:11px;line-height:1.6}
+body.night .tools,body.night .control-box,body.night .analysis-panel{background:#182235;color:#e2e8f0}
+body.night .tools summary{color:#93c5fd}
+body.night .result,body.night .calc-box,body.night .calc-result{background:#26364e;color:#e2e8f0}
+body.night .muted{color:#b4c3d8}
+@media(max-width:760px){
+  .control-box{gap:4px;padding:8px;max-width:calc(100vw - 42px)}
+  .tools{top:210px;width:290px;max-height:calc(100vh - 240px)}
+  .analysis-panel{top:210px;right:8px;width:calc(100vw - 48px);max-height:60vh}
+  .title-badge{font-size:12px}
+}
+</style>
 </head>
 <body>
 
 <div class="control-box">
-    <div class="title-badge">
-        <span id="uiTitle">⚡ SOLION 북미 거래·입지 맵</span>
-        <span class="ver-tag">v8.0</span>
-    </div>
+  <div class="title-badge">
+    <span id="uiTitle">⚡ SOLION 북미 거래·입지 맵</span>
+    <span class="ver-tag">v8.0</span>
+  </div>
 
-    <div class="layer-group-box">
-        <span>👁️ 레이어:</span>
-        <label><input type="checkbox" id="chkCellMat" checked onchange="renderMarkers()"> 셀/소재</label>
-        <label><input type="checkbox" id="chkSpokeHub" checked onchange="renderMarkers()"> Spoke-Hub</label>
-        <label><input type="checkbox" id="chkCorpInfra" checked onchange="renderMarkers()"> 법인/물류인프라</label>
-    </div>
+  <div class="layer-group-box">
+    <span>👁️ 레이어:</span>
+    <label><input type="checkbox" id="chkCellMat" checked onchange="applyFilters()"> 셀/소재</label>
+    <label><input type="checkbox" id="chkSpokeHub" checked onchange="applyFilters()"> Spoke-Hub</label>
+    <label><input type="checkbox" id="chkCorpInfra" checked onchange="applyFilters()"> 법인/물류인프라</label>
+  </div>
 
-    <select id="mapStyleSelect" onchange="changeBaseMap()">
-        <option value="esri_street">🗺️ 표준 지도</option>
-        <option value="esri_light">⚪ 캔버스</option>
-        
-        <option value="esri_sat">🛰️ 위성</option>
+  <select id="mapStyleSelect" onchange="changeBaseMap()">
+    <option value="esri_street">🗺️ 표준 지도</option>
+    <option value="esri_light">⚪ 캔버스</option>
+    <option value="esri_sat">🛰️ 위성</option>
+  </select>
+
+  <div class="metal-price-box">
+    <span>🪙가정 가격 USD/t:</span>
+    <span>Ni:</span>
+    <input type="number" id="priceNi" value="17000" min="0" step="500" oninput="onPriceInput()">
+    <span>Co:</span>
+    <input type="number" id="priceCo" value="28000" min="0" step="1000" oninput="onPriceInput()">
+    <span>Li₂CO₃:</span>
+    <input type="number" id="priceLi" value="12500" min="0" step="500" oninput="onPriceInput()">
+  </div>
+
+  <div style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700">
+    <span>⛽가정 $/gal:</span>
+    <input type="number" id="dieselPriceInput" class="fuel-input" value="6.18" min="0" step=".01">
+  </div>
+
+  <button class="btn-route-katy" onclick="loadNavigationRoute('katy')">🚚 케이티 도로</button>
+  <button class="btn-route-torrance" onclick="loadNavigationRoute('torrance')">🚛 토랜스 도로</button>
+  <button class="btn-rail" onclick="loadRailRoute('katy')">🚂 케이티 개념선</button>
+  <button class="btn-rail" onclick="loadRailRoute('torrance')">🚆 토랜스 개념선</button>
+  <button id="simBtn" onclick="toggleSimMode()">🎯 반경시뮬: OFF</button>
+  <button id="iraBtn" onclick="toggleIraLayer()">🏛️ 제도·확인사항</button>
+  <button id="langBtn" class="btn-lang" onclick="toggleLanguage()">🌐 EN</button>
+  <button id="darkBtn" onclick="toggleDarkMode()">🌙 다크</button>
+  <button id="resetBtn" class="btn-primary" onclick="resetMap()">🔄 초기화</button>
+</div>
+
+<aside class="tools">
+  <b>SOLION · 거래처 발굴 / 입지 검토</b>
+
+  <div class="notice">
+    기존 자료를 이관한 작업용 지도입니다. 시설의 최신 가동·규격·물량·주소는 독립 검증하지 않았습니다. 마커는 ‘원본 기재·미검증’ 또는 ‘후보’입니다.
+  </div>
+
+  <label>
+    업무 모드
+    <select id="stage" onchange="applyFilters()">
+      <option value="trade">1단계 · 유통·트레이딩</option>
+      <option value="plant">2단계 · 생산시설 투자</option>
     </select>
+  </label>
 
-    <div class="metal-price-box">
-        <span>🪙가정 가격 USD/t:</span>
-        <span>Ni:</span><input type="number" id="priceNi" value="17000" step="500" oninput="onPriceInput()">
-        <span>Co:</span><input type="number" id="priceCo" value="28000" step="1000" oninput="onPriceInput()">
-        <span>Li₂CO₃:</span><input type="number" id="priceLi" value="12500" step="500" oninput="onPriceInput()">
+  <input id="search" type="text" placeholder="기업·도시·주 검색" oninput="applyFilters()" style="width:100%">
+
+  <div class="grid">
+    <label>
+      분류
+      <select id="cat" onchange="applyFilters()">
+        <option value="">전체</option>
+        <option value="Cell">Cell</option>
+        <option value="Material">Material</option>
+        <option value="Spoke">Spoke</option>
+        <option value="Hub">Hub</option>
+        <option value="Office">Office</option>
+        <option value="Port">Port</option>
+        <option value="Warehouse">Warehouse</option>
+        <option value="Residence">Residence</option>
+      </select>
+    </label>
+    <label>
+      원본 상태
+      <select id="statusFilter" onchange="applyFilters()">
+        <option value="">전체</option>
+        <option value="Operating">원본 가동 기재</option>
+        <option value="Construction">원본 건설 기재</option>
+        <option value="Candidate">후보 / 개념</option>
+      </select>
+    </label>
+  </div>
+
+  <label><input type="checkbox" id="excludeLfp" checked onchange="applyFilters()"> LFP 전용 제외 (혼합·불명은 확인대상 유지)</label>
+  <label><input type="checkbox" id="showHome" onchange="applyFilters()"> 주거지 후보 표시</label>
+
+  <div id="modeNote" class="muted"></div>
+  <div id="counts" class="result"></div>
+
+  <details open>
+    <summary>시설 목록 · 클릭해 상세 확인</summary>
+    <div id="facilityList"></div>
+  </details>
+
+  <details>
+    <summary>거래 원료 가치·공헌이익 계산</summary>
+    <div class="muted">
+      시설 능력과 별개인 거래 시나리오입니다. 가격은 상단의 수동 가정값(시세 연동 없음). Li는 탄산리튬 기준이며 Li 원소함량에 5.323을 곱해 환산합니다.
     </div>
+    <div class="grid" id="assayInputs"></div>
+    <button onclick="calcTrade()">계산</button>
+    <div id="tradeResult" class="result"></div>
+  </details>
 
-    <div style="display:flex; align-items:center; gap:3px; font-size:11px; font-weight:700;">
-        <span>⛽가정 $/gal:</span>
-        <input type="number" id="dieselPriceInput" class="fuel-input" value="6.18" step="0.01" />
+  <details>
+    <summary>실제 거래 경로·운송비 비교</summary>
+    <div class="muted">
+      사무실을 화물 경유지로 가정하지 않습니다. 출발·도착 창고/시설을 선택하세요. 도로 API는 일반 차량 경로 참고이며 위험물·대형트럭 운행 검증이 아닙니다.
     </div>
+    <label>출발<select id="origin"></select></label>
+    <label>도착<select id="destination"></select></label>
+    <div class="grid">
+      <label>실적재량 t<input id="payload" type="number" min=".1" step="any" value="20"></label>
+      <label>배차 견적 USD/대<input id="quote" type="number" min="0" step="any" placeholder="운송사 확인값"></label>
+      <label>포장·상하차 USD/t<input id="handling" type="number" min="0" step="any" value="0"></label>
+      <label>보관·기타 USD/t<input id="otherCost" type="number" min="0" step="any" value="0"></label>
+    </div>
+    <button onclick="routeSelected()">선택 구간 도로 조회</button>
+    <button onclick="quoteCost()">견적 기준 비용 계산</button>
+    <div id="routeResult" class="result">출발·도착과 견적을 입력하세요.</div>
+  </details>
 
-    <button class="btn-route-katy" onclick="loadNavigationRoute('katy')">🚚 케이티 도로</button>
-    <button class="btn-route-torrance" onclick="loadNavigationRoute('torrance')">🚛 토랜스 도로</button>
-    <button class="btn-rail" onclick="loadRailRoute('katy')">🚂 케이티 개념선</button>
-    <button class="btn-rail" onclick="loadRailRoute('torrance')">🚆 토랜스 개념선</button>
+  <details id="editDetails">
+    <summary>시설 메모·확인정보 편집</summary>
+    <div class="muted">
+      선택 시설의 실사·영업 확인 내용을 기록합니다. 브라우저 저장은 이 파일·브라우저 환경에 한정됩니다. JSON 내보내기로 백업하세요.
+    </div>
+    <select id="editFacility" onchange="loadEdit()"></select>
 
-    <button id="simBtn" onclick="toggleSimMode()">🎯 반경시뮬: OFF</button>
-    <button id="iraBtn" onclick="toggleIraLayer()">🏛️ 제도·확인사항</button>
-    <button id="langBtn" class="btn-lang" onclick="toggleLanguage()">🌐 EN</button>
-    <button onclick="toggleDarkMode()" id="darkBtn">🌙 다크</button>
-    <button class="btn-primary" onclick="resetMap()" id="resetBtn">🔄 초기화</button>
-</div>
+    <label>
+      거래 역할
+      <select id="editRole">
+        <option value="미확인">미확인</option>
+        <option value="원료 공급처">원료 공급처</option>
+        <option value="블랙매스 판매처">블랙매스 판매처</option>
+        <option value="블랙매스 구매처">블랙매스 구매처</option>
+        <option value="임가공처">임가공처</option>
+        <option value="경쟁사">경쟁사</option>
+        <option value="물류 수탁처">물류 수탁처</option>
+      </select>
+    </label>
 
-<div class="legend-box">
-    <div class="legend-title">📌 심볼 및 교통망 범례</div>
-    <div class="legend-item"><span class="marker-icon icon-cell"></span> <span>배터리 셀 (Cell Gigafactory)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-material"></span> <span>양극재 / 전구체 (Material)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-spoke"></span> <span>리사이클링 Spoke (초록색 원)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-hub"></span> <span>리사이클링 Hub (파란색 사각)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-office"></span> <span>법인 오피스 HQ (진한 남색)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-residence"></span> <span>주거지 후보 (보라색 원)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-port"></span> <span>무역 항만 (주황색 삼각형)</span></div>
-    <div class="legend-item"><span class="marker-icon icon-warehouse"></span> <span>3PL 보세창고 & FTZ (청록색)</span></div>
-</div>
+    <label>
+      공정 (복수는 쉼표 구분)
+      <input id="editProcess" type="text" style="width:100%" placeholder="전처리, 습식, 건식, 전기화학, 직접재생">
+    </label>
+
+    <label>
+      확인 상태
+      <select id="editStatus">
+        <option value="미확인">미확인</option>
+        <option value="계획">계획</option>
+        <option value="건설">건설</option>
+        <option value="시운전">시운전</option>
+        <option value="상업가동">상업가동</option>
+        <option value="중단">중단</option>
+        <option value="취소">취소</option>
+        <option value="후보">후보</option>
+      </select>
+    </label>
+
+    <label>월 외부 거래가능량 t (불명은 공란)<input id="editVolume" type="number" min="0" step="any"></label>
+    <label>확인일<input id="editDate" type="date"></label>
+    <label>근거 URL<input id="editSource" type="url" style="width:100%"></label>
+    <label>
+      담당자·규격·계약·인허가 메모
+      <textarea id="editMemo" rows="4" style="width:100%"></textarea>
+    </label>
+    <button onclick="saveEdit()">메모 저장</button>
+    <span id="saveStatus" class="muted"></span>
+  </details>
+
+  <details>
+    <summary>자료 내보내기·가져오기</summary>
+    <button onclick="exportData(false)">JSON 백업</button>
+    <button onclick="exportData(true)">현재 필터 CSV</button>
+    <label>
+      JSON 백업 복원
+      <input type="file" accept="application/json,.json" onchange="importData(event)">
+    </label>
+    <div id="dataStatus" class="muted"></div>
+  </details>
+
+  <details>
+    <summary>정책·자료 기준과 사용법</summary>
+    <div class="muted">
+      ① 시설 클릭 → 원본과 확인정보 구분 ② 거래처 메모에 검증 결과 기록 ③ 실제 원료 분석표로 가격 계산 ④ 실제 시설·창고 간 경로와 운송사 견적 비교.
+      <br>
+      300/650km는 직선거리 탐색 구간이며 경제성 한계가 아닙니다. 지도·Leaflet·도로 조회는 인터넷이 필요합니다. 좌표는 원본의 대략 위치입니다.
+    </div>
+    <p><a href="https://www.epa.gov/hw/lithium-ion-battery-recycling-frequently-asked-questions" target="_blank" rel="noopener">EPA · 블랙매스·폐기물 판단</a></p>
+    <p><a href="https://www.irs.gov/credits-deductions/businesses/advanced-energy-project-credit" target="_blank" rel="noopener">IRS · 48C 요건</a></p>
+    <p><a href="https://comptroller.texas.gov/taxes/franchise/" target="_blank" rel="noopener">Texas · Franchise tax</a></p>
+    <p><a href="https://content.govdelivery.com/accounts/USCENSUS/bulletins/426e589" target="_blank" rel="noopener">미국 Census · 블랙매스 수출 관련 공지</a></p>
+    <div class="notice">
+      수출 거래는 BIS 예외·승인 적용 여부와 폐기물·운송 규제를 개별 확인하세요. 이 지도는 수출 가능 여부나 지원금 수급 자격을 판정하지 않습니다.
+    </div>
+  </details>
+</aside>
 
 <div class="analysis-panel" id="analysisPanel">
-    <div class="panel-header">
-        <span class="panel-title" id="panelTitle">📍 입지 및 물류비용 분석</span>
-        <button class="close-btn" onclick="closePanel()">✕</button>
+  <div class="panel-header">
+    <span class="panel-title" id="panelTitle">📍 입지 및 물류비용 분석</span>
+    <button class="close-btn" onclick="closePanel()">✕</button>
+  </div>
+  <div class="calc-box">
+    <div class="calc-title">🚚 예상 물류비용 시뮬레이터</div>
+    <div class="muted" style="margin-bottom:8px">북미 내륙 트럭 기준</div>
+    <div class="calc-row">
+      <span>운임 단가 ($ / ton·km):</span>
+      <input id="rateInput" type="number" value=".18" min="0" step=".01" onchange="updateLogisticsCost()">
     </div>
-    
-    <div class="calc-box">
-        <div class="calc-title">
-            <span id="calcHeaderTitle">🚚 예상 물류비용 시뮬레이터</span>
-            <span style="font-size:10px; color:#64748b;" id="calcSub">북미 내륙 트럭 기준</span>
-        </div>
-        <div class="calc-row">
-            <span id="lblRate">운임 단가 ($ / ton·km):</span>
-            <input type="number" id="rateInput" value="0.18" step="0.01" onchange="updateLogisticsCost()">
-        </div>
-        <div class="calc-row">
-            <span id="lblTon">연간 물동량 (톤 / 년):</span>
-            <input type="number" id="tonInput" value="10000" step="1000" onchange="updateLogisticsCost()">
-        </div>
-        <div class="calc-row">
-            <span id="lblHazmat">운송 분류·비용 가정:</span>
-            <select id="hazmatFactor" onchange="updateLogisticsCost()" style="padding:2px 4px; font-size:11px;">
-                <option value="">분류 미확인 — 계산 보류</option><option value="1.0">분류 확인·기본 시나리오 (1.0x)</option>
-                <option value="1.35">가정 할증 시나리오 (1.35x)</option>
-            </select>
-        </div>
-        <div class="calc-result" id="costResultBox"></div>
+    <div class="calc-row">
+      <span>연간 물동량 (톤 / 년):</span>
+      <input id="tonInput" type="number" value="10000" min="1" step="1000" onchange="updateLogisticsCost()">
     </div>
-
-    <div id="panelContent"></div>
+    <div class="calc-row">
+      <span>운송 분류·비용 가정:</span>
+      <select id="hazmatFactor" onchange="updateLogisticsCost()">
+        <option value="">분류 미확인 — 계산 보류</option>
+        <option value="1">분류 확인·기본 시나리오 (1.0x)</option>
+        <option value="1.35">가정 할증 시나리오 (1.35x)</option>
+      </select>
+    </div>
+    <div id="costResultBox" class="calc-result"></div>
+  </div>
+  <div id="panelContent"></div>
 </div>
 
-
-<style>
-.control-box{max-width:calc(100vw - 48px)} .analysis-panel{top:155px;max-height:calc(100vh - 190px)}
-.legend-box{max-height:35vh;min-width:210px}.tools{position:absolute;top:155px;left:12px;width:340px;max-height:calc(100vh - 190px);overflow:auto;z-index:1000;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 4px 16px #0002;padding:12px;font-size:12px;box-sizing:border-box}
-.tools summary{cursor:pointer;font-weight:800;padding:8px 0;color:#1e3a8a}.tools label{display:block;margin:7px 0}.tools input,.tools select{max-width:100%;box-sizing:border-box}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.grid input{width:100%}.muted{font-size:11px;color:#64748b;line-height:1.5}.result{background:#eff6ff;padding:10px;border-radius:6px;line-height:1.7;margin:8px 0}.notice{background:#fff7ed;color:#9a3412;padding:8px;border-radius:6px;line-height:1.5;margin:8px 0}#facilityList button{display:block;text-align:left;width:100%;margin:4px 0;white-space:normal}.legend-box{display:none}body.night .tools,body.night .control-box,body.night .analysis-panel{background:#182235;color:#e2e8f0}body.night .tools summary{color:#93c5fd}@media(max-width:760px){.tools{top:210px;width:290px;max-height:calc(100vh - 240px)}.analysis-panel{top:210px;right:8px;width:calc(100vw - 48px);max-height:60vh}.control-box{gap:4px;font-size:10px}} 
-</style>
-<aside class="tools">
-<b>SOLION · 거래처 발굴 / 입지 검토</b>
-<div class="notice">기존 자료를 이관한 작업용 지도입니다. 시설의 최신 가동·규격·물량·주소는 독립 검증하지 않았습니다. 마커는 ‘원본 기재·미검증’ 또는 ‘후보’입니다.</div>
-<label>업무 모드 <select id="stage" onchange="applyFilters()"><option value="trade">1단계 · 유통·트레이딩</option><option value="plant">2단계 · 생산시설 투자</option></select></label>
-<input id="search" placeholder="기업·도시·주 검색" oninput="applyFilters()" style="width:100%">
-<div class="grid"><label>분류<select id="cat" onchange="applyFilters()"><option value="">전체</option><option>Cell</option><option>Material</option><option>Spoke</option><option>Hub</option><option>Office</option><option>Port</option><option>Warehouse</option><option>Residence</option></select></label><label>원본 상태<select id="statusFilter" onchange="applyFilters()"><option value="">전체</option><option value="Operating">원본 가동 기재</option><option value="Construction">원본 건설 기재</option><option value="Candidate">후보 / 개념</option></select></label></div>
-<label><input type="checkbox" id="excludeLfp" checked onchange="applyFilters()"> LFP 전용 제외 (혼합·불명은 확인대상 유지)</label>
-<label><input type="checkbox" id="showHome" onchange="applyFilters()"> 주거지 후보 표시</label>
-<div id="modeNote" class="muted"></div><div id="counts" class="result"></div>
-<details open><summary>시설 목록 · 클릭해 상세 확인</summary><div id="facilityList"></div></details>
-<details><summary>거래 원료 가치·공헌이익 계산</summary>
-<div class="muted">시설 능력과 별개인 거래 시나리오입니다. 가격은 상단의 수동 가정값(시세 연동 없음). Li는 탄산리튬 기준이며 Li 원소함량에 5.323을 곱해 환산합니다.</div>
-<div class="grid" id="assayInputs"></div><button onclick="calcTrade()">계산</button><div id="tradeResult" class="result"></div>
-</details>
-<details><summary>실제 거래 경로·운송비 비교</summary>
-<div class="muted">사무실을 화물 경유지로 가정하지 않습니다. 출발·도착 창고/시설을 선택하세요. 도로 API는 일반 차량 경로 참고이며 위험물·대형트럭 운행 검증이 아닙니다.</div>
-<label>출발<select id="origin"></select></label><label>도착<select id="destination"></select></label>
-<div class="grid"><label>실적재량 t<input id="payload" type="number" min="0.1" value="20"></label><label>배차 견적 USD/대<input id="quote" type="number" min="0" placeholder="운송사 확인값"></label><label>포장·상하차 USD/t<input id="handling" type="number" min="0" value="0"></label><label>보관·기타 USD/t<input id="otherCost" type="number" min="0" value="0"></label></div>
-<button onclick="routeSelected()">선택 구간 도로 조회</button><button onclick="quoteCost()">견적 기준 비용 계산</button><div id="routeResult" class="result">출발·도착과 견적을 입력하세요.</div>
-</details>
-<details><summary>시설 메모·확인정보 편집</summary><div class="muted">선택 시설의 실사·영업 확인 내용을 기록합니다. 브라우저 저장은 이 파일·브라우저 환경에 한정됩니다. JSON 내보내기로 백업하세요.</div>
-<select id="editFacility" onchange="loadEdit()" style="width:100%"></select>
-<label>거래 역할<select id="editRole"><option>미확인</option><option>원료 공급처</option><option>블랙매스 판매처</option><option>블랙매스 구매처</option><option>임가공처</option><option>경쟁사</option><option>물류 수탁처</option></select></label>
-<label>공정 (복수는 쉼표 구분)<input id="editProcess" style="width:100%" placeholder="전처리, 습식, 건식, 전기화학, 직접재생"></label>
-<label>확인 상태<select id="editStatus"><option>미확인</option><option>계획</option><option>건설</option><option>시운전</option><option>상업가동</option><option>중단</option><option>취소</option><option>후보</option></select></label>
-<label>월 외부 거래가능량 t (불명은 공란)<input id="editVolume" type="number" min="0"></label>
-<label>확인일<input id="editDate" type="date"></label><label>근거 URL<input id="editSource" type="url" style="width:100%"></label><label>담당자·규격·계약·인허가 메모<textarea id="editMemo" rows="4" style="width:100%;box-sizing:border-box"></textarea></label>
-<button onclick="saveEdit()">메모 저장</button><span id="saveStatus" class="muted"></span>
-</details>
-<details><summary>자료 내보내기·가져오기</summary><button onclick="exportData(false)">JSON 백업</button><button onclick="exportData(true)">현재 필터 CSV</button><label>JSON 백업 복원<input type="file" accept="application/json,.json" onchange="importData(event)"></label><div id="dataStatus" class="muted"></div></details>
-<details><summary>정책·자료 기준과 사용법</summary><div class="muted">① 시설 클릭 → 원본과 확인정보 구분 ② 거래처 메모에 검증 결과 기록 ③ 실제 원료 분석표로 가격 계산 ④ 실제 시설·창고 간 경로와 운송사 견적 비교.<br>300/650km는 직선거리 탐색 구간이며 경제성 한계가 아닙니다. 지도·Leaflet·도로 조회는 인터넷이 필요합니다. 좌표는 원본의 대략 위치입니다.</div><p><a href="https://www.epa.gov/hw/lithium-ion-battery-recycling-frequently-asked-questions" target="_blank" rel="noopener">EPA · 블랙매스·폐기물 판단</a></p><p><a href="https://www.irs.gov/credits-deductions/businesses/advanced-energy-project-credit" target="_blank" rel="noopener">IRS · 48C 요건</a></p><p><a href="https://comptroller.texas.gov/taxes/franchise/" target="_blank" rel="noopener">Texas · Franchise tax</a></p><p><a href="https://content.govdelivery.com/accounts/USCENSUS/bulletins/426e589" target="_blank" rel="noopener">미국 Census · 블랙매스 수출 관련 공지</a></p><div class="notice">수출 거래는 BIS 예외·승인 적용 여부와 폐기물·운송 규제를 개별 확인하세요. 이 지도는 수출 가능 여부나 지원금 수급 자격을 판정하지 않습니다.</div></details>
-</aside>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let currentLang = 'ko';
+let currentLang='ko';
 
-    const map = L.map('map', { zoomControl: false }).setView([35.0, -96.0], 4);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+const money=x=>new Intl.NumberFormat('en-US',{
+  style:'currency',currency:'USD',maximumFractionDigits:2
+}).format(x);
+const num=id=>{
+  const v=$(id).value;
+  return v.trim()===''?NaN:Number(v);
+};
+const safeUrl=u=>{
+  try{
+    const v=new URL(u);
+    return ['https:','http:'].includes(v.protocol)?v.href:'';
+  }catch{
+    return '';
+  }
+};
 
-    const tileProviders = {
-        esri_street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' }),
-        esri_light: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles &copy; Esri' }),
-        google_road: L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: 'Map data &copy; Google' }),
-        esri_sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' })
-    };
+const map=L.map('map',{zoomControl:false}).setView([35,-96],4);
+L.control.zoom({position:'bottomright'}).addTo(map);
 
-    let currentTileLayer = tileProviders.esri_street;
-    currentTileLayer.addTo(map);
+const tileProviders={
+  esri_street:L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19,attribution:'Tiles &copy; Esri'}
+  ),
+  esri_light:L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:16,attribution:'Tiles &copy; Esri'}
+  ),
+  esri_sat:L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19,attribution:'Tiles &copy; Esri'}
+  )
+};
 
-    function changeBaseMap() {
-        const selected = document.getElementById("mapStyleSelect").value;
-        map.removeLayer(currentTileLayer);
-        currentTileLayer = tileProviders[selected];
-        currentTileLayer.addTo(map);
+let currentTileLayer=tileProviders.esri_street;
+currentTileLayer.addTo(map);
+
+function changeBaseMap(){
+  map.removeLayer(currentTileLayer);
+  currentTileLayer=tileProviders[$('mapStyleSelect').value];
+  currentTileLayer.addTo(map);
+}
+
+const baseOffices={
+  torrance:{lat:33.8358,lng:-118.3406,name:'토랜스 오피스 (HQ)'},
+  katy:{lat:29.7700,lng:-95.6300,name:'케이티 오피스 (HQ)'}
+};
+
+/*
+  원본 자료 이관 데이터.
+  가동 상태·능력·화학계·좌표는 독립 검증하지 않은 원본 기재값입니다.
+  원본 배열 순서는 기존 JSON 메모의 facility ID 호환을 위해 유지합니다.
+*/
+const facilities=[
+  {
+    group:'CellMat',category:'Cell',
+    name:'Ultium Cells #1 (GM-LGES)',nameEn:'Ultium Cells #1',
+    status:'Operating',state:'OH',city:'Warren',
+    lat:41.203,lng:-80.815,capa:'40 GWh',chem:'NCMA'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'Ultium Cells #2 (GM-LGES)',nameEn:'Ultium Cells #2',
+    status:'Operating',state:'TN',city:'Spring Hill',
+    lat:35.751,lng:-86.930,capa:'50 GWh',chem:'NCMA'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'SK Battery America (SK On)',nameEn:'SK Battery America',
+    status:'Operating',state:'GA',city:'Commerce',
+    lat:34.228,lng:-83.456,capa:'22 GWh',chem:'NCM9'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'BlueOval SK #1, #2 (Ford-SK)',nameEn:'BlueOval SK #1, #2',
+    status:'Construction',state:'KY',city:'Glendale',
+    lat:37.601,lng:-85.905,capa:'86 GWh',chem:'NCM'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'Hyundai-LGES JV (HL-GA)',nameEn:'Hyundai-LGES JV',
+    status:'Construction',state:'GA',city:'Bryan County',
+    lat:32.148,lng:-81.464,capa:'30 GWh',chem:'NCM'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'Tesla Gigafactory Texas',nameEn:'Tesla Giga Texas',
+    status:'Operating',state:'TX',city:'Austin',
+    lat:30.222,lng:-97.617,capa:'100 GWh',chem:'4680 NCM/LFP'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'Tesla-Panasonic Giga Nevada',nameEn:'Tesla Giga Nevada',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.538,lng:-119.440,capa:'39 GWh',chem:'NCA'
+  },
+  {
+    group:'CellMat',category:'Cell',
+    name:'LGES Arizona',nameEn:'LGES Arizona',
+    status:'Construction',state:'AZ',city:'Queen Creek',
+    lat:33.248,lng:-111.634,capa:'53 GWh',chem:'46시리즈/LFP'
+  },
+  {
+    group:'CellMat',category:'Material',
+    name:'LG Chem Tennessee Cathode',nameEn:'LG Chem TN Cathode',
+    status:'Construction',state:'TN',city:'Clarksville',
+    lat:36.590,lng:-87.359,capa:'60k 톤',chem:'NCMA 양극재'
+  },
+  {
+    group:'CellMat',category:'Material',
+    name:'Ultium CAM (POSCO Future M)',nameEn:'Ultium CAM',
+    status:'Operating',state:'QC',city:'Bécancour',
+    lat:46.380,lng:-72.440,capa:'30k 톤',chem:'NCMA 양극재'
+  },
+  {
+    group:'CellMat',category:'Material',
+    name:'EcoPro CAM Canada',nameEn:'EcoPro CAM Canada',
+    status:'Construction',state:'QC',city:'Bécancour',
+    lat:46.365,lng:-72.460,capa:'45k 톤',chem:'High-Ni NCM'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'미 남동부 소싱 허브 (조지아)',nameEn:'SE US Sourcing Hub (GA)',
+    status:'Operating',state:'GA',city:'Atlanta',
+    lat:33.749,lng:-84.388,capa:'대규모 수거',chem:'EV 스크랩'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'Redwood Tahoe Spoke',nameEn:'Redwood Tahoe Spoke',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.546,lng:-119.520,capa:'20GWh+',chem:'블랙매스'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'Redwood Carolina Spoke',nameEn:'Redwood Carolina Spoke',
+    status:'Operating',state:'SC',city:'Ridgeville',
+    lat:33.095,lng:-80.314,capa:'20,000 톤',chem:'EV 팩 스크랩'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'ABTC Nevada Spoke',nameEn:'ABTC Nevada Spoke',
+    status:'Operating',state:'NV',city:'McCarran',
+    lat:39.520,lng:-119.480,capa:'20,000 톤',chem:'NCM·NCA'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'Blue Whale Materials Spoke',nameEn:'Blue Whale Spoke',
+    status:'Construction',state:'OK',city:'Bartlesville',
+    lat:36.747,lng:-95.980,capa:'20,000 톤',chem:'Li-ion 스크랩'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'Princeton NuEnergy Spoke',nameEn:'Princeton NuEnergy Spoke',
+    status:'Operating',state:'SC',city:'Chester',
+    lat:34.704,lng:-81.212,capa:'5,000 톤',chem:'직접재생'
+  },
+  {
+    group:'SpokeHub',category:'Spoke',
+    name:'Lithion Technologies Spoke',nameEn:'Lithion Spoke',
+    status:'Operating',state:'QC',city:'Saint-Bruno',
+    lat:45.526,lng:-73.342,capa:'15,000 톤',chem:'EV 불량품'
+  },
+  {
+    group:'SpokeHub',category:'Hub',
+    name:'Redwood Tahoe Hub (통합)',nameEn:'Redwood Tahoe Hub',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.530,lng:-119.500,capa:'대규모 정련',chem:'습식제련'
+  },
+  {
+    group:'SpokeHub',category:'Hub',
+    name:'Nth Cycle Fairfield Hub',nameEn:'Nth Cycle Hub',
+    status:'Operating',state:'OH',city:'Fairfield',
+    lat:39.346,lng:-84.555,capa:'전기화학 정련',chem:'MHP 정련'
+  },
+  {
+    group:'SpokeHub',category:'Hub',
+    name:'R3 Lithium Hub',nameEn:'R3 Lithium Hub',
+    status:'Operating',state:'GA',city:'Covington',
+    lat:33.580,lng:-83.840,capa:'리튬 고순도 정련',chem:'탄산리튬'
+  },
+  {
+    group:'CorpInfra',category:'Office',
+    name:'캘리포니아 토랜스 오피스 (HQ)',nameEn:'Torrance Office (HQ)',
+    status:'Operating',state:'CA',city:'Torrance',
+    lat:33.8358,lng:-118.3406,capa:'서부 영업 HQ',chem:'비즈니스'
+  },
+  {
+    group:'CorpInfra',category:'Residence',
+    name:'토랜스 주거 후보: West Torrance',nameEn:'West Torrance Residence',
+    status:'Operating',state:'CA',city:'Torrance',
+    lat:33.8290,lng:-118.3550,capa:'타운하우스',chem:'주거'
+  },
+  {
+    group:'CorpInfra',category:'Office',
+    name:'텍사스 케이티 오피스 (에너지 코리더)',nameEn:'Katy Office (HQ)',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7700,lng:-95.6300,capa:'남서부 영업 HQ',chem:'글래스 타워'
+  },
+  {
+    group:'CorpInfra',category:'Residence',
+    name:'케이티 주거 후보: Cinco Ranch',nameEn:'Cinco Ranch Residence',
+    status:'Operating',state:'TX',city:'Katy',
+    lat:29.7280,lng:-95.7650,capa:'단독주택',chem:'주거'
+  },
+  {
+    group:'CorpInfra',category:'Port',
+    name:'롱비치 항 & LA 항 (Port Complex)',nameEn:'Port of Long Beach / LA',
+    status:'Operating',state:'CA',city:'Long Beach',
+    lat:33.7542,lng:-118.2165,capa:'컨테이너 1위',chem:'해상물류'
+  },
+  {
+    group:'CorpInfra',category:'Port',
+    name:'휴스턴 항 (Port of Houston)',nameEn:'Port of Houston',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7355,lng:-95.2750,capa:'걸프만 최대 무역항',chem:'벌크/컨테이너'
+  },
+  {
+    group:'CorpInfra',category:'Warehouse',
+    name:'카슨/롱비치 3PL 보세창고',nameEn:'Carson Bonded 3PL',
+    status:'Operating',state:'CA',city:'Carson',
+    lat:33.8317,lng:-118.2570,capa:'특수화물 보관',chem:'보세창고'
+  },
+  {
+    group:'CorpInfra',category:'Warehouse',
+    name:'휴스턴 3PL 물류센터 (Katy 3PL)',nameEn:'Katy 3PL Center',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7800,lng:-95.7000,capa:'대형 풀필먼트',chem:'물류센터'
+  }
+];
+
+const iraZones=[
+  {state:'Texas (휴스턴 / 오스틴 권역)',stateEn:'Texas (Houston/Austin)',lat:30,lng:-96.2,color:'#2563eb'},
+  {state:'Georgia (배터리 벨트)',stateEn:'Georgia (Battery Belt)',lat:33.4,lng:-83.2,color:'#16a34a'},
+  {state:'Kentucky & Tennessee',stateEn:'Kentucky & Tennessee',lat:36.4,lng:-86.8,color:'#7c3aed'},
+  {state:'Nevada (리노 / 스파크스 권역)',stateEn:'Nevada (Reno/Sparks)',lat:39.5,lng:-119.5,color:'#ea580c'},
+  {state:'Michigan (디트로이트 / 러스트벨트)',stateEn:'Michigan (Rust Belt)',lat:42.5,lng:-84,color:'#0891b2'},
+  {state:'Arizona (피닉스 / 퀸크릭 권역)',stateEn:'Arizona (Phoenix)',lat:33.3,lng:-111.7,color:'#ca8a04'},
+  {state:'Canada - Quebec & Ontario',stateEn:'Canada - Quebec & Ontario',lat:45.8,lng:-74,color:'#059669'}
+];
+
+const markersLayer=L.layerGroup().addTo(map);
+const simCircleLayer=L.layerGroup().addTo(map);
+const routeLayer=L.layerGroup().addTo(map);
+const railLayer=L.layerGroup().addTo(map);
+const iraLayerGroup=L.layerGroup();
+
+let isSimMode=false;
+let isDarkMode=false;
+let isIraActive=false;
+let currentCaptured300=[];
+let currentCaptured650=[];
+let currentActiveRoute=null;
+let currentActiveRail=null;
+let lastRoadCosts={katy:0,torrance:0};
+let selectedRouteSeq=0;
+
+const storageKey='solion-map-v8-notes';
+let notes={};
+
+try{
+  const stored=JSON.parse(localStorage.getItem(storageKey)||'{}');
+  if(stored&&typeof stored==='object'&&!Array.isArray(stored)) notes=stored;
+}catch{}
+
+facilities.forEach((f,i)=>{
+  f.id='facility-'+i;
+  f.originalStatus=f.status;
+  f.candidate=(
+    f.group==='CorpInfra'&&['Office','Residence','Warehouse'].includes(f.category)
+  )||f.name.includes('소싱 허브');
+  if(f.candidate) f.status='Candidate';
+});
+
+function createCustomIcon(category,status){
+  const colors={
+    Cell:'#ef4444',Material:'#eab308',Spoke:'#10b981',Hub:'#3b82f6',
+    Office:'#1d4ed8',Residence:'#8b5cf6',Port:'#f97316',Warehouse:'#06b6d4'
+  };
+  let shape='border-radius:3px;';
+  if(['Cell','Spoke','Residence'].includes(category)) shape='border-radius:50%;';
+  if(category==='Material') shape='transform:rotate(45deg);border-radius:2px;';
+  if(category==='Port') shape='clip-path:polygon(50% 0%,0% 100%,100% 100%);';
+  const border=status==='Operating'?'2px solid white':'2px dashed #0f172a';
+  return L.divIcon({
+    className:'custom-div-icon',
+    html:`<div style="width:14px;height:14px;background:${colors[category]||'#64748b'};${shape}border:${border};box-shadow:0 2px 5px #0006"></div>`,
+    iconSize:[18,18],iconAnchor:[9,9]
+  });
+}
+
+function getDistanceKm(lat1,lon1,lat2,lon2){
+  const rad=Math.PI/180;
+  const dLat=(lat2-lat1)*rad;
+  const dLon=(lon2-lon1)*rad;
+  const a=Math.sin(dLat/2)**2+
+    Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
+  return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function visibleFacilities(){
+  const q=$('search').value.toLowerCase();
+  return facilities.filter(f=>{
+    if(f.group==='CellMat'&&!$('chkCellMat').checked) return false;
+    if(f.group==='SpokeHub'&&!$('chkSpokeHub').checked) return false;
+    if(f.group==='CorpInfra'&&!$('chkCorpInfra').checked) return false;
+    if(f.category==='Residence'&&!$('showHome').checked) return false;
+    if($('cat').value&&f.category!==$('cat').value) return false;
+    if($('statusFilter').value&&f.status!==$('statusFilter').value) return false;
+    if($('excludeLfp').checked&&/^LFP$/i.test(f.chem.trim())) return false;
+    return [
+      f.name,f.nameEn,f.city,f.state,notes[f.id]?.role
+    ].join(' ').toLowerCase().includes(q);
+  });
+}
+
+function getPopupContent(f){
+  const n=notes[f.id]||{};
+  const url=safeUrl(n.source);
+  return `
+  <div style="min-width:260px;max-width:320px;font-size:12px;line-height:1.6">
+    <b>${esc(currentLang==='ko'?f.name:f.nameEn)}</b><br>
+    ${esc(f.city)}, ${esc(f.state)} · ${esc(f.category)}
+    <div class="notice">${
+      f.candidate
+        ?'후보 권역·개념 위치 / 운영사·계약 미확인'
+        :'원본 기재 시설 / 최신 상태·주소 미검증'
+    }</div>
+    원본 상태: ${esc(f.originalStatus)}<br>
+    원본 능력: ${esc(f.capa)} (기준·실제 처리량 미확인)<br>
+    원본 화학/공정 표기: ${esc(f.chem)}<br>
+    확인 상태: ${esc(n.status||'미확인')}<br>
+    거래 역할: ${esc(n.role||'미확인')}<br>
+    공정: ${esc(n.process||'미확인')}<br>
+    외부 거래가능량: ${
+      n.volume!==undefined&&n.volume!==''
+        ?esc(n.volume)+' t/월'
+        :'미확인'
+    }<br>
+    확인일: ${esc(n.date||'미등록')}<br>
+    ${
+      url
+        ?`<a href="${esc(url)}" target="_blank" rel="noopener">확인 근거</a>`
+        :'근거: 미등록'
+    }<br>
+    <span class="user-note">${esc(n.memo||'담당자·원료 규격·기존 계약·거래 가능 여부 확인 필요')}</span><br>
+    <button onclick="runRadiusAnalysis(${f.lat},${f.lng},'선택 시설 주변')">직선 반경 탐색</button>
+    <button onclick="editFacility('${f.id}')">확인정보 편집</button>
+  </div>`;
+}
+
+function renderMarkers(){
+  markersLayer.clearLayers();
+  facilities.forEach(f=>f._leafletMarker=null);
+  visibleFacilities().forEach(f=>{
+    f._leafletMarker=L.marker([f.lat,f.lng],{
+      icon:createCustomIcon(f.category,f.status)
+    }).bindPopup(getPopupContent(f)).addTo(markersLayer);
+  });
+}
+
+function applyFilters(){
+  renderMarkers();
+  const fs=visibleFacilities();
+  $('counts').textContent=
+    `표시 ${fs.length}개 · 실제 시설 원본 ${fs.filter(f=>!f.candidate).length} / 후보·개념 ${fs.filter(f=>f.candidate).length} · LFP 혼합·불명 별도 확인`;
+  $('modeNote').textContent=$('stage').value==='trade'
+    ?'거래 검토: 외부 판매·구매 여부, 규격, 월 물량과 등록절차를 우선 확인하세요.'
+    :'투자 검토: 원료 확보량, 전력·용수·폐수, 인허가, 경쟁시설, 인수 의향을 메모하세요.';
+  $('facilityList').innerHTML=fs.map(f=>`
+    <button onclick="openFacility('${f.id}')">
+      ${esc(currentLang==='ko'?f.name:f.nameEn)}<br>
+      <span class="muted">
+        ${esc(f.state)} · ${esc(f.category)} · ${esc(notes[f.id]?.role||'거래 미확인')}
+      </span>
+    </button>
+  `).join('');
+}
+
+function openFacility(id){
+  const f=facilities.find(x=>x.id===id);
+  if(!f) return;
+  map.setView([f.lat,f.lng],9);
+  f._leafletMarker?.openPopup();
+}
+
+function editFacility(id){
+  $('editFacility').value=id;
+  loadEdit();
+  $('editDetails').open=true;
+}
+
+function runRadiusAnalysis(lat,lng,title){
+  simCircleLayer.clearLayers();
+  [650000,300000].forEach((r,i)=>{
+    L.circle([lat,lng],{
+      radius:r,color:i?'#10b981':'#f59e0b',
+      weight:2,fillOpacity:.08
+    }).addTo(simCircleLayer);
+  });
+  const fs=visibleFacilities()
+    .filter(f=>!['Residence','Office'].includes(f.category))
+    .map(f=>({...f,dist:getDistanceKm(lat,lng,f.lat,f.lng)}))
+    .filter(f=>f.dist>.05)
+    .sort((a,b)=>a.dist-b.dist);
+  currentCaptured300=fs.filter(f=>f.dist<=300);
+  currentCaptured650=fs.filter(f=>f.dist>300&&f.dist<=650);
+  $('panelTitle').textContent=title+' · 현재 필터 기준';
+  $('analysisPanel').style.display='block';
+  updateLogisticsCost();
+  renderCapturedList();
+}
+
+function updateLogisticsCost(){
+  const rate=num('rateInput');
+  const tons=num('tonInput');
+  const h=num('hazmatFactor');
+
+  if(!Number.isFinite(h)){
+    $('costResultBox').textContent='운송 분류 미확인: 비용 계산 보류';
+    return;
+  }
+  if(!(rate>=0&&tons>0)){
+    $('costResultBox').textContent='유효한 단가·물량을 입력하세요.';
+    return;
+  }
+
+  const rows=[
+    ['0–300km',currentCaptured300],
+    ['300–650km',currentCaptured650]
+  ].map(([label,fs])=>{
+    const weighted=fs.filter(f=>Number(notes[f.id]?.volume)>0&&!f.candidate);
+    if(!weighted.length){
+      return `<div>${label}: 거래가능량 확인 시설 없음 — 비용 산출 보류</div>`;
+    }
+    const vol=weighted.reduce((a,f)=>a+Number(notes[f.id].volume),0);
+    const d=weighted.reduce(
+      (a,f)=>a+f.dist*Number(notes[f.id].volume),0
+    )/vol*1.2;
+    const cost=d*rate*h;
+    return `
+      <div>${label}: ${weighted.length}개 물량 가중 · 가정 도로 ${d.toFixed(0)}km<br>
+      ${money(cost)}/t · ${money(cost*tons)}/년</div>`;
+  });
+
+  $('costResultBox').innerHTML=rows.join('<hr>')+
+    '<div class="muted">직선거리 × 1.2 가정. 선택 구간별 시나리오이며 합산하지 않습니다. 실제 도로·운송 견적과 다릅니다.</div>';
+}
+
+function renderCapturedList(){
+  const section=(name,fs)=>`
+    <b>${name} · ${fs.length}개</b>
+    ${fs.map(f=>`
+      <div class="fac-list-item">
+        ${esc(currentLang==='ko'?f.name:f.nameEn)}
+        · ${f.dist.toFixed(0)}km (직선)
+      </div>
+    `).join('')}`;
+  $('panelContent').innerHTML=
+    section('0–300km',currentCaptured300)+'<hr>'+
+    section('300–650km',currentCaptured650);
+}
+
+function toggleSimMode(){
+  isSimMode=!isSimMode;
+  $('simBtn').textContent=isSimMode?'🎯 반경시뮬: ON (클릭)':'🎯 반경시뮬: OFF';
+  $('simBtn').classList.toggle('btn-active',isSimMode);
+}
+
+map.on('click',e=>{
+  if(!isSimMode) return;
+  runRadiusAnalysis(e.latlng.lat,e.latlng.lng,'신규 후보지');
+});
+
+function closePanel(){
+  $('analysisPanel').style.display='none';
+  simCircleLayer.clearLayers();
+}
+
+function toggleDarkMode(){
+  isDarkMode=!isDarkMode;
+  $('map').classList.toggle('dark-mode-map',isDarkMode);
+  document.body.classList.toggle('night',isDarkMode);
+  $('darkBtn').textContent=isDarkMode?'☀️ 라이트':'🌙 다크';
+}
+
+function resetMap(){
+  closePanel();
+  routeLayer.clearLayers();
+  railLayer.clearLayers();
+  currentActiveRoute=null;
+  currentActiveRail=null;
+  lastRoadCosts={katy:0,torrance:0};
+  selectedRouteSeq++;
+  applyFilters();
+  map.setView([35,-96],4);
+}
+
+async function loadNavigationRoute(target){
+  if(currentActiveRoute===target){
+    routeLayer.clearLayers();
+    currentActiveRoute=null;
+    return;
+  }
+
+  routeLayer.clearLayers();
+  currentActiveRoute=target;
+
+  const waypoints=target==='katy'
+    ?'-84.3880,33.7490;-86.8025,33.5207;-90.1848,32.2988;-91.1871,30.4518;-95.3698,29.7604;-95.6300,29.7700'
+    :'-84.3880,33.7490;-88.0399,30.6954;-95.3698,29.7604;-98.4936,29.4241;-106.4111,31.8457;-110.9747,32.2226;-112.0740,33.4484;-118.2437,34.0522;-118.3406,33.8358';
+
+  const color=target==='katy'?'#d97706':'#2563eb';
+
+  try{
+    const response=await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${waypoints}?overview=full&geometries=geojson`,
+      {signal:AbortSignal.timeout(20000)}
+    );
+
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    if(currentActiveRoute!==target) return;
+
+    const route=data.routes?.[0];
+    if(!route) throw new Error('No route');
+
+    const miles=route.distance/1609.34;
+    const diesel=num('dieselPriceInput');
+    if(!Number.isFinite(diesel)||diesel<0) throw new Error('Invalid diesel price');
+
+    const fuelCost=miles/6.5*diesel;
+    const total=fuelCost+miles*1.5;
+    lastRoadCosts[target]=total;
+
+    const line=L.geoJSON(route.geometry,{
+      style:{color,weight:5,opacity:.9}
+    }).addTo(routeLayer);
+
+    const en=currentLang==='en';
+    const name=target==='katy'
+      ?(en?'Georgia → Katy':'조지아 → 케이티')
+      :(en?'Georgia → Torrance':'조지아 → 토랜스');
+
+    line.bindPopup(`
+      <div style="min-width:280px;font-size:12px;line-height:1.6">
+        <b>${name}</b>
+        <div class="route-info-box">
+          ${en?'General driving reference; truck/hazmat routing and payload unverified.':'일반 도로 참고 경로. 트럭·위험물 경로와 적재량은 미검증입니다.'}<br>
+          ${en?'Road distance':'도로 주행 거리'}: ${(route.distance/1000).toFixed(0)} km<br>
+          ${en?'Driving only':'순수 주행'}: ${(route.duration/3600).toFixed(1)} ${en?'hours':'시간'}<br>
+          ${en?'Assumed diesel':'가정 디젤'}: ${money(diesel)}/gal<br>
+          ${en?'Fuel cost at 6.5 MPG':'연비 6.5 MPG 기준 유류비'}: ${money(fuelCost)}<br>
+          <b>${en?'Assumed one-way operating cost':'가정 운송원가(편도)'}: ${money(total)}</b><br>
+          ${en?'Fuel + assumed $1.50/mile. Not an all-in carrier quote.':'연료비 + 가정 $1.50/mile. 운송사 All-in 견적이 아닙니다.'}<br>
+          ${en?'Office endpoints are comparison points, not cargo delivery assumptions.':'사무실 종착점은 비교용이며 실제 화물 인도 지점을 뜻하지 않습니다.'}
+        </div>
+      </div>
+    `);
+
+    map.fitBounds(line.getBounds(),{padding:[60,60]});
+    line.openPopup();
+  }catch(error){
+    if(currentActiveRoute===target){
+      currentActiveRoute=null;
+      alert(currentLang==='ko'
+        ?'도로 경로 조회에 실패했습니다. 인터넷·서비스 상태와 입력값을 확인하세요.'
+        :'Road lookup failed. Check connectivity, service status and inputs.');
+    }
+  }
+}
+
+function loadRailRoute(target){
+  railLayer.clearLayers();
+  if(currentActiveRail===target){
+    currentActiveRail=null;
+    return;
+  }
+  currentActiveRail=target;
+  const end=baseOffices[target];
+  const line=L.polyline([
+    [33.749,-84.388],[end.lat,end.lng]
+  ],{
+    color:'#7c3aed',dashArray:'8,8',weight:3
+  }).addTo(railLayer);
+
+  line.bindPopup(
+    '철도 운송 방향 개념선입니다. 실제 철도 선형·운영사·터미널·화물 수탁 여부는 미확인입니다. 거리·운임·소요일·절감률은 산출하지 않습니다. 사무실은 철도 화물 인도 지점이 아닙니다.'
+  ).openPopup();
+
+  map.fitBounds(line.getBounds(),{padding:[50,50]});
+}
+
+function toggleIraLayer(){
+  isIraActive=!isIraActive;
+  iraLayerGroup.clearLayers();
+  if(!isIraActive){
+    map.removeLayer(iraLayerGroup);
+    return;
+  }
+  iraZones.forEach(z=>{
+    L.circleMarker([z.lat,z.lng],{
+      radius:10,color:z.color
+    }).bindPopup(`
+      <b>${esc(currentLang==='ko'?z.state:z.stateEn)}</b><br>
+      지원제도 검토 권역입니다. 주 경계·수급 자격을 나타내지 않습니다.<br>
+      45X·48C는 사업·제품·배정·현행 규정별 확인 필요.<br>
+      단순 무역법인에 제조 세액공제를 자동 적용하지 않습니다.<br>
+      텍사스: franchise tax 별도 검토.<br>
+      캐나다: 미국 제도와 구분하여 확인.
+    `).addTo(iraLayerGroup);
+  });
+  iraLayerGroup.addTo(map);
+}
+
+function onPriceInput(){
+  renderMarkers();
+  calcTrade();
+}
+
+const fields=[
+  ['ni','Ni 함량 %',20],
+  ['co','Co 함량 %',5],
+  ['li','Li 원소 함량 %',4],
+  ['moisture','수분 %',10],
+  ['payNi','Ni 매출 지급률 %',80],
+  ['payCo','Co 매출 지급률 %',80],
+  ['payLi','Li 매출 지급률 %',50],
+  ['deduct','처리·불순물 공제 $/건톤',0],
+  ['buy','매입 $/습톤',4000],
+  ['variable','물류·검사·금융 $/습톤',150],
+  ['monthly','월 거래량 습톤',100]
+];
+
+$('assayInputs').innerHTML=fields.map(([id,label,value])=>`
+  <label>${label}
+    <input type="number" id="${id}" value="${value}" min="0" step="any" oninput="calcTrade()">
+  </label>
+`).join('');
+
+function calcTrade(){
+  const ids=fields.map(f=>f[0]).concat(['priceNi','priceCo','priceLi']);
+  const v=Object.fromEntries(ids.map(id=>[id,num(id)]));
+
+  if(
+    Object.values(v).some(x=>!Number.isFinite(x)||x<0)||
+    ['ni','co','li','payNi','payCo','payLi'].some(id=>v[id]>100)||
+    v.moisture>=100||v.ni+v.co+v.li>100
+  ){
+    $('tradeResult').textContent='수치와 함량·수분·지급률 범위를 확인하세요.';
+    return;
+  }
+
+  const dry=1-v.moisture/100;
+  const ni=v.priceNi*v.ni/100;
+  const co=v.priceCo*v.co/100;
+  const li=v.priceLi*v.li/100*5.323;
+
+  const theoretical=ni+co+li;
+  const saleDry=ni*v.payNi/100+co*v.payCo/100+li*v.payLi/100-v.deduct;
+  const saleWet=saleDry*dry;
+  const margin=saleWet-v.buy-v.variable;
+
+  $('tradeResult').innerHTML=`
+    함유금속 이론가치: <b>${money(theoretical)}/건톤</b><br>
+    가정 매출 정산: ${money(saleDry)}/건톤<br>
+    습톤 환산 매출: ${money(saleWet)}/습톤<br>
+    공헌이익:
+    <b style="color:${margin<0?'#dc2626':'#047857'}">${money(margin)}/습톤</b><br>
+    월 공헌이익: ${money(margin*v.monthly)}
+    <div class="muted">
+      예시 입력값이며 견적·수익 보장이 아닙니다. 고정비·법인세 전 금액. 계약에 회수율이 별도 적용될 경우 지급률과 중복 반영하지 않도록 확인하세요.
+    </div>
+  `;
+}
+
+const editFields=[
+  ['editRole','role'],
+  ['editProcess','process'],
+  ['editStatus','status'],
+  ['editVolume','volume'],
+  ['editDate','date'],
+  ['editSource','source'],
+  ['editMemo','memo']
+];
+
+function loadEdit(){
+  const n=notes[$('editFacility').value]||{};
+  editFields.forEach(([id,key])=>{
+    $(id).value=n[key]??(
+      id==='editRole'||id==='editStatus'?'미확인':''
+    );
+  });
+}
+
+function saveEdit(){
+  if($('editVolume').value!==''&&!(num('editVolume')>=0)){
+    alert(currentLang==='ko'?'물량은 0 이상이어야 합니다.':'Volume must be zero or greater.');
+    return;
+  }
+  if($('editSource').value&&!safeUrl($('editSource').value)){
+    alert(currentLang==='ko'
+      ?'http/https 근거 URL을 입력하세요.'
+      :'Enter an http/https source URL.');
+    return;
+  }
+
+  const n={};
+  editFields.forEach(([id,key])=>n[key]=$(id).value);
+  notes[$('editFacility').value]=n;
+
+  try{
+    localStorage.setItem(storageKey,JSON.stringify(notes));
+    $('saveStatus').textContent='브라우저에 저장됨';
+  }catch{
+    $('saveStatus').textContent='메모리 반영됨. 브라우저 저장 불가: JSON 백업 필요';
+  }
+
+  applyFilters();
+  if($('analysisPanel').style.display==='block') updateLogisticsCost();
+}
+
+const facilityOptions=facilities.map(f=>`
+  <option value="${f.id}">${esc(f.name)}</option>
+`).join('');
+
+['origin','destination','editFacility'].forEach(id=>{
+  $(id).innerHTML=facilityOptions;
+});
+
+$('destination').selectedIndex=facilities.length-2;
+
+async function routeSelected(){
+  const a=facilities.find(f=>f.id===$('origin').value);
+  const b=facilities.find(f=>f.id===$('destination').value);
+
+  if(!a||!b||a.id===b.id){
+    $('routeResult').textContent='서로 다른 지점을 선택하세요.';
+    return;
+  }
+
+  const seq=++selectedRouteSeq;
+  $('routeResult').textContent='도로 조회 중…';
+
+  try{
+    const r=await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`,
+      {signal:AbortSignal.timeout(15000)}
+    );
+
+    if(!r.ok) throw Error('HTTP '+r.status);
+    const data=await r.json();
+    if(seq!==selectedRouteSeq) return;
+
+    const route=data.routes?.[0];
+    if(!route) throw Error('No route');
+
+    currentActiveRoute=null;
+    routeLayer.clearLayers();
+
+    const line=L.geoJSON(route.geometry,{
+      style:{color:'#2563eb',weight:4}
+    }).addTo(routeLayer);
+
+    map.fitBounds(line.getBounds(),{padding:[50,50]});
+
+    const aName=currentLang==='ko'?a.name:a.nameEn;
+    const bName=currentLang==='ko'?b.name:b.nameEn;
+
+    $('routeResult').textContent=
+      `${aName} → ${bName}: ${(route.distance/1000).toFixed(0)}km · 순수 주행 ${(route.duration/3600).toFixed(1)}시간. 일반 도로 참고값; 휴식·대기·운행제한 별도.`;
+  }catch(e){
+    if(seq===selectedRouteSeq){
+      $('routeResult').textContent=
+        '도로 조회 실패: '+e.message+' — 인터넷·서비스 상태를 확인하세요.';
+    }
+  }
+}
+
+function quoteCost(){
+  const t=num('payload');
+  const q=num('quote');
+  const h=num('handling');
+  const o=num('otherCost');
+
+  if(!(t>0&&q>=0&&h>=0&&o>=0)){
+    $('routeResult').textContent='적재량과 운송사 견적·추가비용을 입력하세요.';
+    return;
+  }
+
+  $('routeResult').textContent=
+    `견적 기준 ${money(q/t+h+o)}/t (배차 ${money(q)} ÷ ${t}t + 포장·상하차 ${money(h)}/t + 보관·기타 ${money(o)}/t). 견적 범위 밖 항목은 별도.`;
+}
+
+function download(name,text,type){
+  const url=URL.createObjectURL(new Blob([text],{type}));
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function exportData(csv){
+  if(!csv){
+    download(
+      'SOLION_map_notes_v8.json',
+      JSON.stringify({
+        version:8,
+        exportedAt:new Date().toISOString(),
+        notes
+      },null,2),
+      'application/json'
+    );
+    return;
+  }
+
+  const rows=[
+    [
+      'ID','시설','주','도시','구분','원본상태','확인상태',
+      '역할','공정','월거래가능량t','확인일','출처','메모'
+    ],
+    ...visibleFacilities().map(f=>{
+      const n=notes[f.id]||{};
+      return [
+        f.id,f.name,f.state,f.city,f.category,f.originalStatus,
+        n.status,n.role,n.process,n.volume,n.date,n.source,n.memo
+      ];
+    })
+  ];
+
+  const cell=v=>{
+    let text=String(v??'');
+    if(/^[\s]*[=+@-]/.test(text)) text="'"+text;
+    return '"'+text.replace(/"/g,'""')+'"';
+  };
+
+  download(
+    'SOLION_map_filtered.csv',
+    '\ufeff'+rows.map(r=>r.map(cell).join(',')).join('\r\n'),
+    'text/csv;charset=utf-8'
+  );
+}
+
+async function importData(e){
+  try{
+    const file=e.target.files[0];
+    if(!file) return;
+    if(file.size>2000000) throw Error('파일 크기 초과');
+
+    const data=JSON.parse(await file.text());
+
+    if(
+      data.version!==8||!data.notes||
+      typeof data.notes!=='object'||Array.isArray(data.notes)
+    ){
+      throw Error('v8 백업 형식 아님');
     }
 
-    const baseOffices = {
-        torrance: { lat: 33.8358, lng: -118.3406, name: "토랜스 오피스 (HQ)" },
-        katy: { lat: 29.7700, lng: -95.6300, name: "케이티 오피스 (HQ)" }
-    };
+    const clean={};
+    const allowed=['role','process','status','volume','date','source','memo'];
 
-    const facilities = [
-        // 그룹 1: 셀 / 소재 (chkCellMat)
-        { group: "CellMat", category: "Cell", name: "Ultium Cells #1 (GM-LGES)", nameEn: "Ultium Cells #1", status: "Operating", state: "OH", city: "Warren", lat: 41.203, lng: -80.815, capa: "40 GWh", chem: "NCMA", niRatio: 0.45, coRatio: 0.08, liRatio: 0.05, note: "러스트벨트 핵심 공정 스크랩 발생 거점", noteEn: "Rust Belt scrap source" },
-        { group: "CellMat", category: "Cell", name: "Ultium Cells #2 (GM-LGES)", nameEn: "Ultium Cells #2", status: "Operating", state: "TN", city: "Spring Hill", lat: 35.751, lng: -86.930, capa: "50 GWh", chem: "NCMA", niRatio: 0.43, coRatio: 0.07, liRatio: 0.05, note: "테네시 밸류체인 핵심 셀 공장", noteEn: "Tennessee core cell plant" },
-        { group: "CellMat", category: "Cell", name: "SK Battery America (SK On)", nameEn: "SK Battery America", status: "Operating", state: "GA", city: "Commerce", lat: 34.228, lng: -83.456, capa: "22 GWh", chem: "NCM9", niRatio: 0.48, coRatio: 0.04, liRatio: 0.05, note: "조지아 배터리 벨트 공정 스크랩 원천", noteEn: "Georgia scrap source" },
-        { group: "CellMat", category: "Cell", name: "BlueOval SK #1, #2 (Ford-SK)", nameEn: "BlueOval SK #1, #2", status: "Construction", state: "KY", city: "Glendale", lat: 37.601, lng: -85.905, capa: "86 GWh", chem: "NCM", niRatio: 0.40, coRatio: 0.07, liRatio: 0.05, note: "켄터키 초대형 합작 기가팩토리", noteEn: "Kentucky mega joint gigafactory" },
-        { group: "CellMat", category: "Cell", name: "Hyundai-LGES JV (HL-GA)", nameEn: "Hyundai-LGES JV", status: "Construction", state: "GA", city: "Bryan County", lat: 32.148, lng: -81.464, capa: "30 GWh", chem: "NCM", niRatio: 0.42, coRatio: 0.07, liRatio: 0.05, note: "현대차 조지아 메타플랜트 직결 셀 공장", noteEn: "Direct-connected cell plant for HMGMA" },
-        { group: "CellMat", category: "Cell", name: "Tesla Gigafactory Texas", nameEn: "Tesla Giga Texas", status: "Operating", state: "TX", city: "Austin", lat: 30.222, lng: -97.617, capa: "100 GWh", chem: "4680 NCM/LFP", niRatio: 0.35, coRatio: 0.04, liRatio: 0.05, note: "텍사스 핵심 수요처 및 스크랩 발생지", noteEn: "Texas core demand & scrap source" },
-        { group: "CellMat", category: "Cell", name: "Tesla-Panasonic Giga Nevada", nameEn: "Tesla Giga Nevada", status: "Operating", state: "NV", city: "Sparks", lat: 39.538, lng: -119.440, capa: "39 GWh", chem: "NCA", niRatio: 0.44, coRatio: 0.06, liRatio: 0.05, note: "미 서부 최대 배터리 생산기지", noteEn: "Western US max battery production base" },
-        { group: "CellMat", category: "Cell", name: "LGES Arizona", nameEn: "LGES Arizona", status: "Construction", state: "AZ", city: "Queen Creek", lat: 33.248, lng: -111.634, capa: "53 GWh", chem: "46시리즈/LFP", niRatio: 0.30, coRatio: 0.02, liRatio: 0.05, note: "남서부 원통형·ESS 배터리 기지", noteEn: "Southwest cylindrical & ESS battery hub" },
-        { group: "CellMat", category: "Material", name: "LG Chem Tennessee Cathode", nameEn: "LG Chem TN Cathode", status: "Construction", state: "TN", city: "Clarksville", lat: 36.590, lng: -87.359, capa: "60k 톤", chem: "NCMA 양극재", niRatio: 0.65, coRatio: 0.11, liRatio: 0.09, note: "미국 내 최대 규모 양극재 공장", noteEn: "US largest cathode plant construction" },
-        { group: "CellMat", category: "Material", name: "Ultium CAM (POSCO Future M)", nameEn: "Ultium CAM", status: "Operating", state: "QC", city: "Bécancour", lat: 46.380, lng: -72.440, capa: "30k 톤", chem: "NCMA 양극재", niRatio: 0.63, coRatio: 0.10, liRatio: 0.08, note: "북미 USMCA 연계 퀘벡 양극재 기지", noteEn: "USMCA linked Quebec cathode facility" },
-        { group: "CellMat", category: "Material", name: "EcoPro CAM Canada", nameEn: "EcoPro CAM Canada", status: "Construction", state: "QC", city: "Bécancour", lat: 46.365, lng: -72.460, capa: "45k 톤", chem: "High-Ni NCM", niRatio: 0.68, coRatio: 0.09, liRatio: 0.09, note: "에코프로-포드-SK 퀘벡 양극재 단지", noteEn: "EcoPro-Ford-SK Quebec cathode cluster" },
-
-        // 그룹 2: Spoke-Hub (chkSpokeHub)
-        { group: "SpokeHub", category: "Spoke", name: "미 남동부 소싱 허브 (조지아)", nameEn: "SE US Sourcing Hub (GA)", status: "Operating", state: "GA", city: "Atlanta", lat: 33.749, lng: -84.388, capa: "대규모 수거", chem: "EV 스크랩", niRatio: 0.48, coRatio: 0.06, liRatio: 0.06, note: "텍사스·서부 물류 운송의 출발 원천지", noteEn: "Origin source for Texas/Western logistics" },
-        { group: "SpokeHub", category: "Spoke", name: "Redwood Tahoe Spoke", nameEn: "Redwood Tahoe Spoke", status: "Operating", state: "NV", city: "Sparks", lat: 39.546, lng: -119.520, capa: "20GWh+", chem: "블랙매스", niRatio: 0.50, coRatio: 0.09, liRatio: 0.07, note: "네바다 상업 가동 전처리 거점", noteEn: "Nevada commercial operating Spoke" },
-        { group: "SpokeHub", category: "Spoke", name: "Redwood Carolina Spoke", nameEn: "Redwood Carolina Spoke", status: "Operating", state: "SC", city: "Ridgeville", lat: 33.095, lng: -80.314, capa: "20,000 톤", chem: "EV 팩 스크랩", niRatio: 0.46, coRatio: 0.08, liRatio: 0.06, note: "사우스캐롤라이나 1단계 가동", noteEn: "South Carolina Stage 1 operation" },
-        { group: "SpokeHub", category: "Spoke", name: "ABTC Nevada Spoke", nameEn: "ABTC Nevada Spoke", status: "Operating", state: "NV", city: "McCarran", lat: 39.520, lng: -119.480, capa: "20,000 톤", chem: "NCM·NCA", niRatio: 0.48, coRatio: 0.08, liRatio: 0.07, note: "미국 배터리 테크놀로지 컴퍼니 상업가동", noteEn: "ABTC commercial operation" },
-        { group: "SpokeHub", category: "Spoke", name: "Blue Whale Materials Spoke", nameEn: "Blue Whale Spoke", status: "Construction", state: "OK", city: "Bartlesville", lat: 36.747, lng: -95.980, capa: "20,000 톤", chem: "Li-ion 스크랩", niRatio: 0.45, coRatio: 0.07, liRatio: 0.06, note: "증설라인 시운전 중", noteEn: "Expansion line trial operation" },
-        { group: "SpokeHub", category: "Spoke", name: "Princeton NuEnergy Spoke", nameEn: "Princeton NuEnergy Spoke", status: "Operating", state: "SC", city: "Chester", lat: 34.704, lng: -81.212, capa: "5,000 톤", chem: "직접재생", niRatio: 0.40, coRatio: 0.06, liRatio: 0.08, note: "상업 가동 중 (직접재생 기술)", noteEn: "Direct recycling commercial operation" },
-        { group: "SpokeHub", category: "Spoke", name: "Lithion Technologies Spoke", nameEn: "Lithion Spoke", status: "Operating", state: "QC", city: "Saint-Bruno", lat: 45.526, lng: -73.342, capa: "15,000 톤", chem: "EV 불량품", niRatio: 0.43, coRatio: 0.07, liRatio: 0.06, note: "퀘벡 상업 가동 전처리 기지", noteEn: "Quebec commercial operating Spoke" },
-        { group: "SpokeHub", category: "Hub", name: "Redwood Tahoe Hub (통합)", nameEn: "Redwood Tahoe Hub", status: "Operating", state: "NV", city: "Sparks", lat: 39.530, lng: -119.500, capa: "대규모 정련", chem: "습식제련", niRatio: 0.95, coRatio: 0.18, liRatio: 0.18, note: "상업 가동 중인 대표 통합 Hub", noteEn: "Commercial operating integrated Hub" },
-        { group: "SpokeHub", category: "Hub", name: "Nth Cycle Fairfield Hub", nameEn: "Nth Cycle Hub", status: "Operating", state: "OH", city: "Fairfield", lat: 39.346, lng: -84.555, capa: "전기화학 정련", chem: "MHP 정련", niRatio: 0.90, coRatio: 0.10, liRatio: 0.05, note: "전기화학적 수용액 정련 가동 중", noteEn: "Electrochemical refining operating" },
-        { group: "SpokeHub", category: "Hub", name: "R3 Lithium Hub", nameEn: "R3 Lithium Hub", status: "Operating", state: "GA", city: "Covington", lat: 33.580, lng: -83.840, capa: "리튬 고순도 정련", chem: "탄산리튬", niRatio: 0.10, coRatio: 0.02, liRatio: 0.22, note: "고순도 탄산리튬 정련 시설", noteEn: "High-purity lithium carbonate refining" },
-
-        // 그룹 3: 법인 및 물류 인프라 (chkCorpInfra)
-        { group: "CorpInfra", category: "Office", name: "캘리포니아 토랜스 오피스 (HQ)", nameEn: "Torrance Office (HQ)", status: "Operating", state: "CA", city: "Torrance", lat: 33.8358, lng: -118.3406, capa: "서부 영업 HQ", chem: "비즈니스", niRatio: 0, coRatio: 0, liRatio: 0, note: "롱비치 항만 차량 20~25분 직결", noteEn: "Direct connected to Long Beach port", linkTitle: "🏢 LoopNet 토랜스 오피스 매물 보기", linkUrl: "https://www.loopnet.com/search/office-space/torrance-ca/for-lease/" },
-        { group: "CorpInfra", category: "Residence", name: "토랜스 주거 후보: West Torrance", nameEn: "West Torrance Residence", status: "Operating", state: "CA", city: "Torrance", lat: 33.8290, lng: -118.3550, capa: "타운하우스", chem: "주거", niRatio: 0, coRatio: 0, liRatio: 0, note: "LA County 최고 수준 자치 치안 (Zip: 90503)", noteEn: "Top security in LA County", linkTitle: "🏡 Redfin 90503 렌트 바로보기", linkUrl: "https://www.redfin.com/zipcode/90503/rentals" },
-        { group: "CorpInfra", category: "Office", name: "텍사스 케이티 오피스 (에너지 코리더)", nameEn: "Katy Office (HQ)", status: "Operating", state: "TX", city: "Houston", lat: 29.7700, lng: -95.6300, capa: "남서부 영업 HQ", chem: "글래스 타워", niRatio: 0, coRatio: 0, liRatio: 0, note: "주 법인세 0% (No State Corporate Income Tax)", noteEn: "0% State Corporate Income Tax", linkTitle: "🏢 LoopNet 휴스턴 오피스 매물 보기", linkUrl: "https://www.loopnet.com/search/office-space/houston-tx/for-lease/" },
-        { group: "CorpInfra", category: "Residence", name: "케이티 주거 후보: Cinco Ranch", nameEn: "Cinco Ranch Residence", status: "Operating", state: "TX", city: "Katy", lat: 29.7280, lng: -95.7650, capa: "단독주택", chem: "주거", niRatio: 0, coRatio: 0, liRatio: 0, note: "게이트드 커뮤니티, 명문 학군 (Zip: 77494)", noteEn: "Gated community, top school district", linkTitle: "🏡 Redfin 77494 렌트 바로보기", linkUrl: "https://www.redfin.com/zipcode/77494/rentals" },
-        { group: "CorpInfra", category: "Port", name: "롱비치 항 & LA 항 (Port Complex)", nameEn: "Port of Long Beach / LA", status: "Operating", state: "CA", city: "Long Beach", lat: 33.7542, lng: -118.2165, capa: "컨테이너 1위", chem: "해상물류", niRatio: 0, coRatio: 0, liRatio: 0, note: "아시아 수출입 및 블랙매스 선적 최적지", noteEn: "Top US container port for Asia export" },
-        { group: "CorpInfra", category: "Port", name: "휴스턴 항 (Port of Houston)", nameEn: "Port of Houston", status: "Operating", state: "TX", city: "Houston", lat: 29.7355, lng: -95.2750, capa: "걸프만 최대 무역항", chem: "벌크/컨테이너", niRatio: 0, coRatio: 0, liRatio: 0, note: "화학·소재·배터리 원자재 수출입 인프라 우수", noteEn: "Gulf coast largest bulk & container port" },
-        { group: "CorpInfra", category: "Warehouse", name: "카슨/롱비치 3PL 보세창고", nameEn: "Carson Bonded 3PL", status: "Operating", state: "CA", city: "Carson", lat: 33.8317, lng: -118.2570, capa: "특수화물 보관", chem: "보세창고", niRatio: 0, coRatio: 0, liRatio: 0, note: "배터리 부산물 보관 및 보세 구역 관세 유예", noteEn: "Battery byproduct storage & tariff suspension" },
-        { group: "CorpInfra", category: "Warehouse", name: "휴스턴 3PL 물류센터 (Katy 3PL)", nameEn: "Katy 3PL Center", status: "Operating", state: "TX", city: "Houston", lat: 29.7800, lng: -95.7000, capa: "대형 풀필먼트", chem: "물류센터", niRatio: 0, coRatio: 0, liRatio: 0, note: "텍사스 내륙 전역 1일 배송 SCM 요충지", noteEn: "1-day delivery SCM hub for Texas inland" }
-    ];
-
-    const iraZones = [
-        { state: "Texas (휴스턴 / 오스틴 권역)", stateEn: "Texas (Houston/Austin)", lat: 30.0, lng: -96.2, radius: 220000, color: "#2563eb", iraBenefit: "IRA 45X + 법인세 0%", grant: "Texas Enterprise Fund", feocNote: "블랙매스 글로벌 수출입 및 삼각무역 최적", feocNoteEn: "Optimized for global black mass trade & export" },
-        { state: "Georgia (배터리 벨트)", stateEn: "Georgia (Battery Belt)", lat: 33.4, lng: -83.2, radius: 190000, color: "#16a34a", iraBenefit: "IRA 45X/48C 세액공제", grant: "Quick Start 인력훈련", feocNote: "현대·SK 인근 공정 스크랩 조달 1순위", feocNoteEn: "Prime location for Hyundai/SK scrap sourcing" },
-        { state: "Kentucky & Tennessee", stateEn: "Kentucky & Tennessee", lat: 36.4, lng: -86.8, radius: 190000, color: "#7c3aed", iraBenefit: "IRA 45X 세액공제", grant: "TVA 저렴한 전력", feocNote: "북미 기가팩토리 70% 커버 물류 요충지", feocNoteEn: "Covers 70% of North American gigafactories" },
-        { state: "Nevada (리노 / 스파크스 권역)", stateEn: "Nevada (Reno/Sparks)", lat: 39.5, lng: -119.5, radius: 180000, color: "#ea580c", iraBenefit: "IRA 45X + 주 세제 혜택", grant: "GOED Grant", feocNote: "Redwood 및 테슬라 연계 서부 허브", feocNoteEn: "Western hub linked to Redwood & Tesla" },
-        { state: "Michigan (디트로이트 / 러스트벨트)", stateEn: "Michigan (Rust Belt)", lat: 42.5, lng: -84.0, radius: 190000, color: "#0891b2", iraBenefit: "IRA 48C 보너스 (+10%)", grant: "SOAR Fund", feocNote: "GM·포드 본진 및 초기 E-Scrap 대량 발생지", feocNoteEn: "GM/Ford HQ & massive early E-Scrap source" },
-        { state: "Arizona (피닉스 / 퀸크릭 권역)", stateEn: "Arizona (Phoenix)", lat: 33.3, lng: -111.7, radius: 170000, color: "#ca8a04", iraBenefit: "IRA 45X 세액공제", grant: "Arizona Competes Fund", feocNote: "LG엔솔 애리조나 및 남서부 원통형·ESS 거점", feocNoteEn: "LGES Arizona & southwest cylindrical/ESS base" },
-        { state: "Canada - Quebec & Ontario", stateEn: "Canada - Quebec & Ontario", lat: 45.8, lng: -74.0, radius: 240000, color: "#059669", iraBenefit: "USMCA 연계 + 캐나다 30% ITC", grant: "Federal Strategic Fund", feocNote: "에코프로·포스코 등 캐나다 밸류체인", feocNoteEn: "EcoPro, Posco Canadian supply chain" }
-    ];
-
-    let markersLayer = L.layerGroup().addTo(map);
-    let simCircleLayer = L.layerGroup().addTo(map);
-    let routeLayer = L.layerGroup().addTo(map);
-    let railLayer = L.layerGroup().addTo(map);
-    let iraLayerGroup = L.layerGroup();
-    let isSimMode = false, isDarkMode = false, isIraActive = false;
-    let currentCaptured300 = [], currentCaptured650 = [];
-    let lastRoadCosts = { katy: 0, torrance: 0 };
-    let currentActiveRoute = null;
-    let currentActiveRail = null;
-
-    function toggleLanguage() {
-        currentLang = currentLang === 'ko' ? 'en' : 'ko';
-        const langBtn = document.getElementById("langBtn");
-        langBtn.innerText = currentLang === 'ko' ? "🌐 EN" : "🌐 KO";
-
-        document.getElementById("uiTitle").innerText = currentLang === 'ko' ? "⚡ SOLION 북미 거래·입지 맵" : "⚡ NA SCM & Logistics Map";
-        document.getElementById("simBtn").innerText = currentLang === 'ko' ? (isSimMode ? "🎯 반경시뮬: ON" : "🎯 반경시뮬: OFF") : (isSimMode ? "🎯 Sim: ON" : "🎯 Sim: OFF");
-        document.getElementById("iraBtn").innerText = currentLang === 'ko' ? "🏛️ 제도·확인사항" : "🏛️ 제도·확인사항";
-        document.getElementById("darkBtn").innerText = currentLang === 'ko' ? (isDarkMode ? "☀️ 라이트" : "🌙 다크") : (isDarkMode ? "☀️ Light" : "🌙 Dark");
-        document.getElementById("resetBtn").innerText = currentLang === 'ko' ? "🔄 초기화" : "🔄 Reset";
-
-        renderMarkers();
-        if (isIraActive) { isIraActive = false; toggleIraLayer(); }
-        if (document.getElementById("analysisPanel").style.display === "block") { updateLogisticsCost(); renderCapturedList(); }
-    }
-
-    // 각 카테고리별 고유 심볼 및 색상 매핑 함수 (Spoke와 주거지 충돌 완전 해결)
-    function createCustomIcon(category, status) {
-        let bgColor = "#ef4444", shapeStyle = "border-radius: 50%;";
-        if (category === "Cell") { bgColor = "#ef4444"; shapeStyle = "border-radius: 50%;"; } // 빨간색 원
-        else if (category === "Material") { bgColor = "#eab308"; shapeStyle = "transform: rotate(45deg); border-radius: 2px;"; } // 노란색 마름모
-        else if (category === "Spoke") { bgColor = "#10b981"; shapeStyle = "border-radius: 50%;"; } // 초록색 원 (Spoke 전용)
-        else if (category === "Hub") { bgColor = "#3b82f6"; shapeStyle = "border-radius: 3px;"; } // 파란색 사각형
-        else if (category === "Office") { bgColor = "#1d4ed8"; shapeStyle = "border-radius: 2px; width: 13px; height: 13px;"; } // 진한 남색 사각형 (HQ)
-        else if (category === "Residence") { bgColor = "#8b5cf6"; shapeStyle = "border-radius: 50%; width: 13px; height: 13px;"; } // 보라색 원 (주거지 전용)
-        else if (category === "Port") { bgColor = "#f97316"; shapeStyle = "clip-path: polygon(50% 0%, 0% 100%, 100% 100%); width: 14px; height: 14px; border: none;"; } // 주황색 삼각형 (항만)
-        else if (category === "Warehouse") { bgColor = "#06b6d4"; shapeStyle = "border-radius: 2px; width: 13px; height: 13px;"; } // 청록색 사각형 (3PL/FTZ)
-
-        const borderStyle = status === "Operating" ? "2px solid #ffffff" : "2px dashed #0f172a";
-        const html = `<div style="width:14px; height:14px; background:${bgColor}; ${shapeStyle} border:${borderStyle}; box-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>`;
-        return L.divIcon({ className: "custom-div-icon", html: html, iconSize: [18, 18], iconAnchor: [9, 9] });
-    }
-
-    function getDistanceKm(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    function onPriceInput() {
-        const pNi = parseFloat(document.getElementById("priceNi").value) || 17000;
-        const pCo = parseFloat(document.getElementById("priceCo").value) || 28000;
-        const pLi = parseFloat(document.getElementById("priceLi").value) || 12500;
-
-        facilities.forEach(fac => {
-            if (fac._leafletMarker) {
-                fac._leafletMarker.setPopupContent(getPopupContent(fac, pNi, pCo, pLi));
-            }
+    facilities.forEach(f=>{
+      const x=data.notes[f.id];
+      if(x&&typeof x==='object'){
+        clean[f.id]={};
+        allowed.forEach(k=>{
+          if(typeof x[k]==='string'||typeof x[k]==='number'){
+            clean[f.id][k]=String(x[k]).slice(0,10000);
+          }
         });
-    }
-
-    function getPopupContent(fac, pNi, pCo, pLi) {
-        const nameTxt = currentLang === 'ko' ? fac.name : fac.nameEn;
-        const statusTxt = currentLang === 'ko' 
-            ? (fac.status === 'Operating' ? '🟢 상업 가동중' : '🚧 건설/시운전') 
-            : (fac.status === 'Operating' ? '🟢 Operating' : '🚧 Construction');
-        const noteTxt = currentLang === 'ko' ? fac.note : fac.noteEn;
-
-        let valuationHtml = "";
-        if (fac.niRatio > 0 || fac.coRatio > 0 || fac.liRatio > 0) {
-            const calcNi = Math.round(pNi * fac.niRatio);
-            const calcCo = Math.round(pCo * fac.coRatio);
-            const calcLi = Math.round(pLi * fac.liRatio);
-            const totalVal = calcNi + calcCo + calcLi;
-            valuationHtml = `
-                <div style="background:#f1f5f9; padding:6px; border-radius:4px; margin-top:5px; font-size:11px;">
-                    💎 <b>${currentLang === 'ko' ? '원료 톤당 가치' : 'Valuation/Ton'}:</b> <span style="color:#dc2626; font-weight:800;">$${totalVal.toLocaleString()}</span><br>
-                    • Ni: $${calcNi.toLocaleString()} | Co: $${calcCo.toLocaleString()} | Li: $${calcLi.toLocaleString()}
-                </div>
-            `;
-        }
-
-        let linkHtml = fac.linkUrl ? `<a href="${fac.linkUrl}" target="_blank" class="realtor-btn">${fac.linkTitle} ➔</a>` : '';
-        let badgeHtml = (fac.group === 'CorpInfra') ? `<div class="distance-badge">📍 무역법인 인프라</div>` : '';
-
-        return `
-            <div style="font-size:12px; line-height:1.5; min-width:270px;">
-                <div style="font-weight:800; font-size:13px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">${nameTxt}</div>
-                ${badgeHtml}
-                <div><b>${currentLang === 'ko' ? '구분' : 'Category'}:</b> ${fac.category} (${statusTxt})</div>
-                <div><b>${currentLang === 'ko' ? '위치' : 'Location'}:</b> ${fac.city}, ${fac.state}</div>
-                <div><b>${currentLang === 'ko' ? '능력' : 'Capa'}:</b> ${fac.capa} | <b>화학:</b> ${fac.chem}</div>
-                ${valuationHtml}
-                <div style="margin-top:4px; color:#475569; font-size:11px;">💡 ${noteTxt}</div>
-                ${linkHtml}
-                <button onclick="runRadiusAnalysis(${fac.lat}, ${fac.lng}, '${nameTxt.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; background:#1e293b; color:#fff; border:none; padding:6px; border-radius:4px; cursor:pointer; font-weight:700;">🚚 ${currentLang === 'ko' ? '반경·물류비 분석' : 'Radius & Logistics'}</button>
-            </div>
-        `;
-    }
-
-    function renderMarkers() {
-        markersLayer.clearLayers();
-
-        const chkCellMat = document.getElementById("chkCellMat").checked;
-        const chkSpokeHub = document.getElementById("chkSpokeHub").checked;
-        const chkCorpInfra = document.getElementById("chkCorpInfra").checked;
-
-        const pNi = parseFloat(document.getElementById("priceNi").value) || 17000;
-        const pCo = parseFloat(document.getElementById("priceCo").value) || 28000;
-        const pLi = parseFloat(document.getElementById("priceLi").value) || 12500;
-
-        facilities.forEach(fac => {
-            if (fac.group === 'CellMat' && !chkCellMat) return;
-            if (fac.group === 'SpokeHub' && !chkSpokeHub) return;
-            if (fac.group === 'CorpInfra' && !chkCorpInfra) return;
-
-            const marker = L.marker([fac.lat, fac.lng], { icon: createCustomIcon(fac.category, fac.status) });
-            fac._leafletMarker = marker;
-            
-            marker.bindPopup(getPopupContent(fac, pNi, pCo, pLi));
-            markersLayer.addLayer(marker);
-        });
-    }
-
-    function runRadiusAnalysis(lat, lng, titleName) {
-        simCircleLayer.clearLayers();
-        L.circle([lat, lng], { radius: 650000, color: '#f59e0b', weight: 2, dashArray: '6, 6', fillColor: '#fef3c7', fillOpacity: 0.18 }).addTo(simCircleLayer);
-        L.circle([lat, lng], { radius: 300000, color: '#10b981', weight: 2, fillColor: '#d1fae5', fillOpacity: 0.28 }).addTo(simCircleLayer);
-        L.circleMarker([lat, lng], { radius: 6, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1 }).addTo(simCircleLayer);
-
-        currentCaptured300 = []; currentCaptured650 = [];
-        facilities.forEach(fac => {
-            const d = getDistanceKm(lat, lng, fac.lat, fac.lng);
-            if (d > 1 && d <= 300) currentCaptured300.push({ ...fac, dist: Math.round(d) });
-            else if (d > 300 && d <= 650) currentCaptured650.push({ ...fac, dist: Math.round(d) });
-        });
-
-        currentCaptured300.sort((a,b)=>a.dist-b.dist); currentCaptured650.sort((a,b)=>a.dist-b.dist);
-        document.getElementById("panelTitle").innerText = `📍 ${titleName}`;
-        document.getElementById("analysisPanel").style.display = "block";
-        updateLogisticsCost();
-        renderCapturedList();
-    }
-
-    function updateLogisticsCost() {
-        const rate = parseFloat(document.getElementById("rateInput").value) || 0.18;
-        const annualTons = parseFloat(document.getElementById("tonInput").value) || 10000;
-        const hazmat = parseFloat(document.getElementById("hazmatFactor").value) || 1.0;
-
-        const avgDist300 = currentCaptured300.length > 0 ? Math.round((currentCaptured300.reduce((s,x)=>s+x.dist,0)/currentCaptured300.length)*1.2) : 240;
-        const avgDist650 = currentCaptured650.length > 0 ? Math.round((currentCaptured650.reduce((s,x)=>s+x.dist,0)/currentCaptured650.length)*1.2) : 540;
-
-        const cost300 = Math.round(avgDist300 * rate * hazmat), total300 = Math.round((cost300 * annualTons)/10000);
-        const cost650 = Math.round(avgDist650 * rate * hazmat), total650 = Math.round((cost650 * annualTons)/10000);
-
-        if (currentLang === 'ko') {
-            document.getElementById("costResultBox").innerHTML = `
-                <div style="font-size:11px; margin-bottom:5px;">🟢 <b>300km 셔틀권:</b> 약 ${avgDist300}km ➔ $${cost300}/톤 (연간 약 <span class="cost-highlight">$${total300.toLocaleString()}만불</span>)</div>
-                <div style="font-size:11px;">🟠 <b>650km 한계권:</b> 약 ${avgDist650}km ➔ $${cost650}/톤 (연간 약 <span class="cost-highlight">$${total650.toLocaleString()}만불</span>)</div>
-            `;
-        } else {
-            document.getElementById("costResultBox").innerHTML = `
-                <div style="font-size:11px; margin-bottom:5px;">🟢 <b>300km Shuttle:</b> ~${avgDist300}km ➔ $${cost300}/ton (Est. <span class="cost-highlight">$${total300.toLocaleString()}M/yr</span>)</div>
-                <div style="font-size:11px;">🟠 <b>650km Limit:</b> ~${avgDist650}km ➔ $${cost650}/ton (Est. <span class="cost-highlight">$${total650.toLocaleString()}M/yr</span>)</div>
-            `;
-        }
-    }
-
-    function renderCapturedList() {
-        let html = `<div class="zone-badge-300">🟢 300km 이내: ${currentCaptured300.length}개소</div>`;
-        currentCaptured300.forEach(f => {
-            const fName = currentLang === 'ko' ? f.name : f.nameEn;
-            html += `<div class="fac-list-item" onclick="map.setView([${f.lat}, ${f.lng}], 7)"><span><b>[${f.category}]</b> ${fName} (${f.state})</span><span style="color:#166534; font-weight:700;">${f.dist}km</span></div>`;
-        });
-        html += `<div class="zone-badge-650">🟠 300~650km: ${currentCaptured650.length}개소</div>`;
-        currentCaptured650.forEach(f => {
-            const fName = currentLang === 'ko' ? f.name : f.nameEn;
-            html += `<div class="fac-list-item" onclick="map.setView([${f.lat}, ${f.lng}], 7)"><span><b>[${f.category}]</b> ${fName} (${f.state})</span><span style="color:#854d0e; font-weight:700;">${f.dist}km</span></div>`;
-        });
-        document.getElementById("panelContent").innerHTML = html;
-    }
-
-    async function loadNavigationRoute(target) {
-        if (currentActiveRoute === target) {
-            routeLayer.clearLayers();
-            currentActiveRoute = null;
-            return;
-        }
-        routeLayer.clearLayers();
-        currentActiveRoute = target;
-
-        let waypoints = "", color = "", routeName = "";
-        if (target === 'katy') {
-            color = "#d97706";
-            routeName = "조지아 소싱허브 ➔ 텍사스 케이티 (I-20/I-10 도로망)";
-            waypoints = "-84.3880,33.7490;-86.8025,33.5207;-90.1848,32.2988;-91.1871,30.4518;-95.3698,29.7604;-95.6300,29.7700";
-        } else if (target === 'torrance') {
-            color = "#2563eb";
-            routeName = "조지아 소싱허브 ➔ 캘리포니아 토랜스 (I-10 대륙횡단)";
-            waypoints = "-84.3880,33.7490;-88.0399,30.6954;-95.3698,29.7604;-98.4936,29.4241;-106.4111,31.8457;-110.9747,32.2226;-112.0740,33.4484;-118.2437,34.0522;-118.3406,33.8358";
-        }
-
-        const url = `https://router.project-osrm.org/route/v1/driving/${waypoints}?overview=full&geometries=geojson`;
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("HTTP " + response.status);
-            const data = await response.json();
-
-            if (currentActiveRoute !== target) return;
-            if (data.routes && data.routes.length > 0) {
-                const route = data.routes[0];
-                const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-                const distanceMeters = route.distance;
-                const distanceKm = (distanceMeters / 1000).toLocaleString('en-US', {maximumFractionDigits: 0});
-                const distanceMiles = distanceMeters / 1609.34;
-                const durationHours = (route.duration / 3600).toFixed(1);
-
-                const dieselPrice = parseFloat(document.getElementById('dieselPriceInput').value) || 6.18;
-                const fuelCost = (distanceMiles / 6.5) * dieselPrice;
-                const totalOperatingCost = fuelCost + (distanceMiles * 1.50);
-
-                lastRoadCosts[target] = totalOperatingCost;
-
-                const polyline = L.polyline(coords, { color: color, weight: 5, opacity: 0.9 }).addTo(routeLayer);
-
-                polyline.bindPopup(`
-                    <div style="font-size:12px; line-height:1.5; min-width:280px;">
-                        <div style="font-weight:800; font-size:13px; color:${color}; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">
-                            🧭 도로 화물 운송 및 물류비 산정 결과 (편도)
-                        </div>
-                        <div style="font-weight:700; color:#0f172a; margin-bottom:4px;">${routeName}</div>
-                        <div class="route-info-box">
-                            • <b>적용 차량:</b> 일반 도로 경로 참고 (트럭 적법 경로·적재량 미검증)<br>
-                            • <b>도로 주행 거리:</b> ${distanceKm} km (${distanceMiles.toFixed(0)} 마일)<br>
-                            • <b>순수 주행 시간:</b> 약 ${durationHours} 시간<br>
-                            • <b>적용 디젤 시세:</b> $${dieselPrice.toFixed(2)} / gal<br>
-                            • <b>예상 유류비:</b> $${fuelCost.toLocaleString('en-US', {maximumFractionDigits: 0})} (연비 6.5 MPG)<br>
-                            • <b>가정 운송원가(편도, 견적 아님):</b> <span style="color:#b45309; font-weight:800;">$${totalOperatingCost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span> (연료비 + 가정 $1.50/mile, 추가 비용 별도)
-                        </div>
-                    </div>
-                `);
-
-                map.fitBounds(polyline.getBounds(), { padding: [60, 60] });
-                polyline.openPopup();
-            }
-        } catch (error) {
-            alert("도로 경로 데이터를 불러오는 중 오류가 발생했습니다.");
-            currentActiveRoute = null; console.error(error);
-        }
-    }
-
-    function loadRailRoute(target) {
-        if (currentActiveRail === target) {
-            railLayer.clearLayers();
-            currentActiveRail = null;
-            return;
-        }
-        railLayer.clearLayers();
-        currentActiveRail = target;
-
-        let railCoords = [];
-        let railName = "", railInfo = "";
-
-        if (target === 'katy') {
-            railName = "조지아 소싱허브 ➔ 텍사스 케이티 (Class I 철도망)";
-            railCoords = [
-                [33.7490, -84.3880], [32.8597, -86.6266], [32.2988, -90.1848],
-                [30.4518, -91.1871], [29.7604, -95.3698], [29.7700, -95.6300]
-            ];
-            railInfo = "• <b>철도 운영사:</b> Norfolk Southern & Union Pacific<br>• <b>장점:</b> 대량 컨테이너 운송 시 트럭 대비 비용 및 탄소 절감";
-        } else if (target === 'torrance') {
-            railName = "조지아 소싱허브 ➔ 캘리포니아 토랜스 (대륙횡단 철도축)";
-            railCoords = [
-                [33.7490, -84.3880], [35.4676, -97.5164], [35.1983, -111.6513],
-                [34.0522, -118.2437], [33.8358, -118.3406]
-            ];
-            railInfo = "• <b>철도 운영사:</b> CSX/NS + BNSF/Union Pacific Intermodal<br>• <b>장점:</b> 미 서부 롱비치/LA 항만 철도 인프라 직결";
-        }
-
-        let totalRailMeters = 0;
-        for (let i = 0; i < railCoords.length - 1; i++) {
-            totalRailMeters += map.distance(railCoords[i], railCoords[i+1]);
-        }
-        const railDistKm = (totalRailMeters / 1000).toLocaleString('en-US', {maximumFractionDigits: 0});
-        const railDistMiles = totalRailMeters / 1609.34;
-        
-        const railTransitHours = (railDistMiles / 40) + 24;
-        const railDays = (railTransitHours / 24).toFixed(1);
-
-        let railEstimatedCost = 0, savingsPercent = 36;
-        if (lastRoadCosts[target] && lastRoadCosts[target] > 0) {
-            const roadCost = lastRoadCosts[target];
-            railEstimatedCost = roadCost * 0.64;
-            savingsPercent = Math.round(((roadCost - railEstimatedCost) / roadCost) * 100);
-        } else {
-            const dieselPrice = parseFloat(document.getElementById('dieselPriceInput').value) || 6.18;
-            const approxRoadCost = (( (target === 'torrance' ? 2373 : 845) / 6.5) * dieselPrice) + ((target === 'torrance' ? 2373 : 845) * 1.50);
-            railEstimatedCost = approxRoadCost * 0.64;
-            savingsPercent = Math.round(((approxRoadCost - railEstimatedCost) / approxRoadCost) * 100);
-        }
-
-        const railPolyline = L.polyline(railCoords, { color: '#7c3aed', weight: 5, dashArray: '8, 8', opacity: 0.95 }).addTo(railLayer);
-
-        railPolyline.bindPopup(`
-            <div style="font-size:12px; line-height:1.5; min-width:280px;">
-                <div style="font-weight:800; font-size:13px; color:#7c3aed; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">
-                    🚂 Class I 화물 철도망 분석 결과
-                </div>
-                <div style="font-weight:700; color:#0f172a; margin-bottom:4px;">${railName}</div>
-                <div class="route-info-box" style="border-left-color: #7c3aed;">
-                    • <b>철도 주행 거리:</b> 약 ${railDistKm} km (${railDistMiles.toFixed(0)} 마일)<br>
-                    • <b>예상 소요 시간:</b> 약 ${railDays} 일 (환적 및 대기 포함)<br>
-                    • <b>예상 물류비(All-in, 편도):</b> <span style="color:#7c3aed; font-weight:800;">$${railEstimatedCost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span> (도로 트럭 대비 약 <span style="color:#d97706; font-weight:800;">${savingsPercent}% 절감</span>)<br>
-                    ${railInfo}
-                </div>
-            </div>
-        `).addTo(railLayer);
-
-        map.fitBounds(railPolyline.getBounds(), { padding: [60, 60] });
-        railPolyline.openPopup();
-    }
-
-    function toggleIraLayer() {
-        isIraActive = !isIraActive;
-        iraLayerGroup.clearLayers();
-        if (!isIraActive) { map.removeLayer(iraLayerGroup); return; }
-
-        iraZones.forEach(zone => {
-            const circle = L.circle([zone.lat, zone.lng], { radius: zone.radius, color: zone.color, weight: 2, fillColor: zone.color, fillOpacity: 0.15 });
-            const zState = currentLang === 'ko' ? zone.state : zone.stateEn;
-            const zNote = currentLang === 'ko' ? zone.feocNote : zone.feocNoteEn;
-
-            circle.bindPopup(`
-                <div style="font-size:12px; line-height:1.5; min-width:230px;">
-                    <div style="font-weight:800; font-size:13px; color:#1e3a8a; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">🏛️ ${zState}</div>
-                    <div><b>💰 인센티브:</b> ${zone.iraBenefit}</div>
-                    <div><b>🎁 보조금:</b> ${zone.grant}</div>
-                    <div style="margin-top:6px; background:#f1f5f9; padding:5px; border-radius:4px; font-size:11px;">📌 <b>전략 포인트:</b> ${zNote}</div>
-                </div>
-            `);
-            iraLayerGroup.addLayer(circle);
-
-            const labelIcon = L.divIcon({
-                className: "",
-                html: `<div class="ira-label">🏛️ ${zState.split(' ')[0]}</div>`,
-                iconSize: [100, 20],
-                iconAnchor: [50, 10]
-            });
-            const labelMarker = L.marker([zone.lat, zone.lng], { icon: labelIcon });
-            labelMarker.bindPopup(circle.getPopup());
-            iraLayerGroup.addLayer(labelMarker);
-        });
-        iraLayerGroup.addTo(map);
-    }
-
-    function toggleSimMode() {
-        isSimMode = !isSimMode;
-        const btn = document.getElementById("simBtn");
-        if (isSimMode) { 
-            btn.innerText = currentLang === 'ko' ? "🎯 반경시뮬: ON (클릭)" : "🎯 Sim: ON"; 
-            btn.classList.add("btn-active"); 
-        } else { 
-            btn.innerText = currentLang === 'ko' ? "🎯 반경시뮬: OFF" : "🎯 Sim: OFF"; 
-            btn.classList.remove("btn-active"); 
-        }
-    }
-
-    map.on('click', function(e) {
-        if (!isSimMode) return;
-        runRadiusAnalysis(e.latlng.lat.toFixed(3), e.latlng.lng.toFixed(3), currentLang === 'ko' ? '신규 후보지' : 'New Candidate');
+      }
     });
 
-    function closePanel() { document.getElementById("analysisPanel").style.display = "none"; simCircleLayer.clearLayers(); }
-    function toggleDarkMode() { 
-        isDarkMode = !isDarkMode; 
-        document.getElementById("map").classList.toggle("dark-mode-map", isDarkMode);
-        document.getElementById("darkBtn").innerText = currentLang === 'ko' ? (isDarkMode ? "☀️ 라이트" : "🌙 다크") : (isDarkMode ? "☀️ Light" : "🌙 Dark");
-    }
-    function resetMap() { 
-        closePanel(); 
-        renderMarkers(); 
-        routeLayer.clearLayers();
-        railLayer.clearLayers();
-        currentActiveRoute = null; currentActiveRail = null; lastRoadCosts = {katy:0,torrance:0};
-        map.setView([35.0, -96.0], 4); 
+    notes={...notes,...clean};
+    let persisted=true;
+    try{
+      localStorage.setItem(storageKey,JSON.stringify(notes));
+    }catch{
+      persisted=false;
     }
 
-    renderMarkers();
+    applyFilters();
+    loadEdit();
+    $('dataStatus').textContent=persisted
+      ?'백업을 병합했습니다.'
+      :'메모리 반영됨. 브라우저 저장 불가: JSON 백업 필요';
+  }catch(e){
+    $('dataStatus').textContent='가져오기 실패: '+e.message;
+  }finally{
+    e.target.value='';
+  }
+}
+
+$('dieselPriceInput').addEventListener('input',()=>{
+  lastRoadCosts={katy:0,torrance:0};
+  if(currentActiveRoute){
+    routeLayer.clearLayers();
+    currentActiveRoute=null;
+  }
+});
+
+loadEdit();
+applyFilters();
+calcTrade();
 </script>
 
 <script>
-const $=id=>document.getElementById(id);
-const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=x=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(x);
-const num=id=>{const v=$(id).value;return v.trim()===''?NaN:Number(v)};
-const safeUrl=u=>{try{const v=new URL(u);return ['https:','http:'].includes(v.protocol)?v.href:''}catch{return ''}};
-const storageKey='solion-map-v8-notes';let notes={};try{notes=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch{}
-facilities.forEach((f,i)=>{f.id='facility-'+i;f.originalStatus=f.status;f.originalNote=f.note;f.candidate=f.group==='CorpInfra'&&['Office','Residence','Warehouse'].includes(f.category)||f.name.includes('소싱 허브');if(f.candidate)f.status='Candidate';});
-function visibleFacilities(){const q=$('search').value.toLowerCase();return facilities.filter(f=>{
-if(f.group==='CellMat'&&!$('chkCellMat').checked||f.group==='SpokeHub'&&!$('chkSpokeHub').checked||f.group==='CorpInfra'&&!$('chkCorpInfra').checked)return false;
-if(f.category==='Residence'&&!$('showHome').checked)return false;
-if($('cat').value&&f.category!==$('cat').value)return false;
-if($('statusFilter').value&&f.status!==$('statusFilter').value)return false;
-if($('excludeLfp').checked&&/^LFP$/i.test(f.chem.trim()))return false;
-return [f.name,f.nameEn,f.city,f.state,notes[f.id]?.role].join(' ').toLowerCase().includes(q);});}
-getPopupContent=function(f){const n=notes[f.id]||{};const url=safeUrl(n.source);return `<div style="min-width:260px;max-width:320px;font-size:12px;line-height:1.6"><b>${esc(currentLang==='ko'?f.name:f.nameEn)}</b><br>${esc(f.city)}, ${esc(f.state)} · ${esc(f.category)}<div class="notice">${f.candidate?'후보 권역·개념 위치 / 운영사·계약 미확인':'원본 기재 시설 / 최신 상태·주소 미검증'}</div>원본 상태: ${esc(f.originalStatus)}<br>원본 능력: ${esc(f.capa)} (기준·실제 처리량 미확인)<br>원본 화학/공정 표기: ${esc(f.chem)}<br>확인 상태: ${esc(n.status||'미확인')}<br>거래 역할: ${esc(n.role||'미확인')}<br>공정: ${esc(n.process||'미확인')}<br>외부 거래가능량: ${n.volume!==undefined&&n.volume!==''?esc(n.volume)+' t/월':'미확인'}<br>확인일: ${esc(n.date||'미등록')}<br>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">확인 근거</a>`:'근거: 미등록'}<br>${esc(n.memo||'담당자·원료 규격·기존 계약·거래 가능 여부 확인 필요')}<br><button onclick="runRadiusAnalysis(${f.lat},${f.lng},'선택 시설 주변')">직선 반경 탐색</button> <button onclick="$('editFacility').value='${f.id}';loadEdit();$('editFacility').closest('details').open=true">확인정보 편집</button></div>`;};
-renderMarkers=function(){markersLayer.clearLayers();facilities.forEach(f=>f._leafletMarker=null);visibleFacilities().forEach(f=>{f._leafletMarker=L.marker([f.lat,f.lng],{icon:createCustomIcon(f.category,f.status)}).bindPopup(getPopupContent(f)).addTo(markersLayer)});};
-function applyFilters(){renderMarkers();const fs=visibleFacilities();$('counts').textContent=`표시 ${fs.length}개 · 실제 시설 원본 ${fs.filter(f=>!f.candidate).length} / 후보·개념 ${fs.filter(f=>f.candidate).length} · LFP 혼합·불명 별도 확인`;$('modeNote').textContent=$('stage').value==='trade'?'거래 검토: 외부 판매·구매 여부, 규격, 월 물량과 등록절차를 우선 확인하세요.':'투자 검토: 원료 확보량, 전력·용수·폐수, 인허가, 경쟁시설, 인수 의향을 메모하세요.';$('facilityList').innerHTML=fs.map(f=>`<button onclick="openFacility('${f.id}')">${esc(f.name)}<br><span class="muted">${esc(f.state)} · ${esc(f.category)} · ${esc(notes[f.id]?.role||'거래 미확인')}</span></button>`).join('');}
-function openFacility(id){const f=facilities.find(x=>x.id===id);map.setView([f.lat,f.lng],9);f._leafletMarker?.openPopup();}
-runRadiusAnalysis=function(lat,lng,title){simCircleLayer.clearLayers();[650000,300000].forEach((r,i)=>L.circle([lat,lng],{radius:r,color:i?'#10b981':'#f59e0b',weight:2,fillOpacity:.08}).addTo(simCircleLayer));const fs=visibleFacilities().filter(f=>!['Residence','Office'].includes(f.category)).map(f=>({...f,dist:getDistanceKm(lat,lng,f.lat,f.lng)})).filter(f=>f.dist>0.05).sort((a,b)=>a.dist-b.dist);currentCaptured300=fs.filter(f=>f.dist<=300);currentCaptured650=fs.filter(f=>f.dist>300&&f.dist<=650);$('panelTitle').textContent=title+' · 현재 필터 기준';$('analysisPanel').style.display='block';updateLogisticsCost();renderCapturedList();};
-updateLogisticsCost=function(){const rate=num('rateInput'),tons=num('tonInput'),h=num('hazmatFactor');if(!Number.isFinite(h)){ $('costResultBox').textContent='운송 분류 미확인: 비용 계산 보류';return}if(!(rate>=0&&tons>0)){ $('costResultBox').textContent='유효한 단가·물량을 입력하세요.';return}const rows=[['0–300km',currentCaptured300],['300–650km',currentCaptured650]].map(([label,fs])=>{const weighted=fs.filter(f=>Number(notes[f.id]?.volume)>0&&!f.candidate);if(!weighted.length)return `<div>${label}: 거래가능량 확인 시설 없음 — 비용 산출 보류</div>`;const vol=weighted.reduce((a,f)=>a+Number(notes[f.id].volume),0);const d=weighted.reduce((a,f)=>a+f.dist*Number(notes[f.id].volume),0)/vol*1.2;const cost=d*rate*h;return `<div>${label}: ${weighted.length}개 물량 가중 · 가정 도로 ${d.toFixed(0)}km<br>${money(cost)}/t · ${money(cost*tons)}/년</div>`});$('costResultBox').innerHTML=rows.join('<hr>')+'<div class="muted">직선거리 × 1.2 가정. 선택 구간별 시나리오이며 합산하지 않습니다. 실제 도로·운송 견적과 다릅니다.</div>';};
-renderCapturedList=function(){const section=(name,fs)=>`<b>${name} · ${fs.length}개</b>`+fs.map(f=>`<div class="fac-list-item">${esc(f.name)} · ${f.dist.toFixed(0)}km (직선)</div>`).join('');$('panelContent').innerHTML=section('0–300km',currentCaptured300)+'<hr>'+section('300–650km',currentCaptured650);};
-loadRailRoute=function(target){railLayer.clearLayers();if(currentActiveRail===target){currentActiveRail=null;return}currentActiveRail=target;const end=baseOffices[target];const line=L.polyline([[33.749,-84.388],[end.lat,end.lng]],{color:'#7c3aed',dashArray:'8,8',weight:3}).addTo(railLayer);line.bindPopup('철도 운송 방향 개념선입니다. 실제 철도 선형·운영사·터미널·화물 수탁 여부는 미확인입니다. 거리·운임·소요일·절감률은 산출하지 않습니다. 사무실은 철도 화물 인도 지점이 아닙니다.').openPopup();map.fitBounds(line.getBounds(),{padding:[50,50]});};
-toggleIraLayer=function(){isIraActive=!isIraActive;iraLayerGroup.clearLayers();if(!isIraActive){map.removeLayer(iraLayerGroup);return}iraZones.forEach(z=>{const m=L.circleMarker([z.lat,z.lng],{radius:10,color:z.color}).bindPopup(`<b>${esc(z.state)}</b><br>지원제도 검토 권역입니다. 주 경계·수급 자격을 나타내지 않습니다.<br>45X·48C는 사업·제품·배정·현행 규정별 확인 필요.<br>단순 무역법인에 제조 세액공제를 자동 적용하지 않습니다.<br>텍사스: franchise tax 별도 검토.<br>캐나다: 미국 제도와 구분하여 확인.`);iraLayerGroup.addLayer(m)});iraLayerGroup.addTo(map);};
-const oldPrice=onPriceInput;onPriceInput=function(){renderMarkers();calcTrade()};const oldDark=toggleDarkMode;toggleDarkMode=function(){oldDark();document.body.classList.toggle('night',isDarkMode)};
-const fields=[['ni','Ni 함량 %',20],['co','Co 함량 %',5],['li','Li 원소 함량 %',4],['moisture','수분 %',10],['payNi','Ni 매출 지급률 %',80],['payCo','Co 매출 지급률 %',80],['payLi','Li 매출 지급률 %',50],['deduct','처리·불순물 공제 $/건톤',0],['buy','매입 $/습톤',4000],['variable','물류·검사·금융 $/습톤',150],['monthly','월 거래량 습톤',100]];
-$('assayInputs').innerHTML=fields.map(([id,label,value])=>`<label>${label}<input type="number" id="${id}" value="${value}" min="0" step="any" oninput="calcTrade()"></label>`).join('');
-function calcTrade(){const ids=fields.map(f=>f[0]).concat(['priceNi','priceCo','priceLi']);const v=Object.fromEntries(ids.map(id=>[id,num(id)]));if(Object.values(v).some(x=>!Number.isFinite(x)||x<0)||['ni','co','li','payNi','payCo','payLi'].some(id=>v[id]>100)||v.moisture>=100||v.ni+v.co+v.li>100){$('tradeResult').textContent='수치와 함량·수분·지급률 범위를 확인하세요.';return}const dry=1-v.moisture/100;const ni=v.priceNi*v.ni/100,co=v.priceCo*v.co/100,li=v.priceLi*v.li/100*5.323;const theoretical=ni+co+li;const saleDry=ni*v.payNi/100+co*v.payCo/100+li*v.payLi/100-v.deduct;const saleWet=saleDry*dry;const margin=saleWet-v.buy-v.variable;$('tradeResult').innerHTML=`함유금속 이론가치: <b>${money(theoretical)}/건톤</b><br>가정 매출 정산: ${money(saleDry)}/건톤<br>습톤 환산 매출: ${money(saleWet)}/습톤<br>공헌이익: <b style="color:${margin<0?'#dc2626':'#047857'}">${money(margin)}/습톤</b><br>월 공헌이익: ${money(margin*v.monthly)}<div class="muted">예시 입력값이며 견적·수익 보장이 아닙니다. 고정비·법인세 전 금액. 계약에 회수율이 별도 적용될 경우 지급률과 중복 반영하지 않도록 확인하세요.</div>`;}
-function loadEdit(){const n=notes[$('editFacility').value]||{};for(const [id,key] of [['editRole','role'],['editProcess','process'],['editStatus','status'],['editVolume','volume'],['editDate','date'],['editSource','source'],['editMemo','memo']])$(id).value=n[key]??(id==='editRole'||id==='editStatus'?'미확인':'');}
-function saveEdit(){if($('editVolume').value!==''&&!(num('editVolume')>=0)){alert('물량은 0 이상이어야 합니다.');return}if($('editSource').value&&!safeUrl($('editSource').value)){alert('http/https 근거 URL을 입력하세요.');return}const n={};for(const [id,key] of [['editRole','role'],['editProcess','process'],['editStatus','status'],['editVolume','volume'],['editDate','date'],['editSource','source'],['editMemo','memo']])n[key]=$(id).value;notes[$('editFacility').value]=n;try{localStorage.setItem(storageKey,JSON.stringify(notes));$('saveStatus').textContent='브라우저에 저장됨'}catch{$('saveStatus').textContent='메모리 반영됨. 브라우저 저장 불가: JSON 백업 필요'}applyFilters();}
-const options=facilities.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('');['origin','destination','editFacility'].forEach(id=>$(id).innerHTML=options);$('destination').selectedIndex=facilities.length-2;
-let selectedRouteSeq=0;
-async function routeSelected(){const a=facilities.find(f=>f.id===$('origin').value),b=facilities.find(f=>f.id===$('destination').value);if(a.id===b.id){$('routeResult').textContent='서로 다른 지점을 선택하세요.';return}const seq=++selectedRouteSeq;$('routeResult').textContent='도로 조회 중…';try{const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`,{signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();if(seq!==selectedRouteSeq)return;const route=data.routes?.[0];if(!route)throw Error('경로 없음');routeLayer.clearLayers();const line=L.geoJSON(route.geometry,{style:{color:'#2563eb',weight:4}}).addTo(routeLayer);map.fitBounds(line.getBounds(),{padding:[50,50]});$('routeResult').textContent=`${a.name} → ${b.name}: ${(route.distance/1000).toFixed(0)}km · 순수 주행 ${(route.duration/3600).toFixed(1)}시간. 일반 도로 참고값; 휴식·대기·운행제한 별도.`}catch(e){if(seq===selectedRouteSeq)$('routeResult').textContent='도로 조회 실패: '+e.message+' — 인터넷·서비스 상태를 확인하세요.'}}
-function quoteCost(){const t=num('payload'),q=num('quote'),h=num('handling'),o=num('otherCost');if(!(t>0&&q>=0&&h>=0&&o>=0)){$('routeResult').textContent='적재량과 운송사 견적·추가비용을 입력하세요.';return}$('routeResult').textContent=`견적 기준 ${money(q/t+h+o)}/t (배차 ${money(q)} ÷ ${t}t + 포장·상하차 ${money(h)}/t + 보관·기타 ${money(o)}/t). 견적 범위 밖 항목은 별도.`;}
-function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function exportData(csv){if(!csv){download('SOLION_map_notes_v8.json',JSON.stringify({version:8,exportedAt:new Date().toISOString(),notes},null,2),'application/json');return}const rows=[['ID','시설','주','도시','구분','원본상태','확인상태','역할','공정','월거래가능량t','확인일','출처','메모'],...visibleFacilities().map(f=>{const n=notes[f.id]||{};return[f.id,f.name,f.state,f.city,f.category,f.originalStatus,n.status,n.role,n.process,n.volume,n.date,n.source,n.memo]})];const cell=v=>'"'+String(v??'').replace(/^[=+@-]/,"'").replace(/"/g,'""')+'"';download('SOLION_map_filtered.csv','\ufeff'+rows.map(r=>r.map(cell).join(',')).join('\r\n'),'text/csv;charset=utf-8');}
-async function importData(e){try{const file=e.target.files[0];if(!file)return;if(file.size>2000000)throw Error('파일 크기 초과');const data=JSON.parse(await file.text());if(data.version!==8||!data.notes||typeof data.notes!=='object'||Array.isArray(data.notes))throw Error('v8 백업 형식 아님');const clean={};const allowed=['role','process','status','volume','date','source','memo'];for(const f of facilities){const x=data.notes[f.id];if(x&&typeof x==='object'){clean[f.id]={};for(const k of allowed)if(typeof x[k]==='string'||typeof x[k]==='number')clean[f.id][k]=String(x[k]).slice(0,10000)}}notes={...notes,...clean};try{localStorage.setItem(storageKey,JSON.stringify(notes))}catch{}applyFilters();loadEdit();$('dataStatus').textContent='백업을 병합했습니다.'}catch(e){$('dataStatus').textContent='가져오기 실패: '+e.message}}
-$('dieselPriceInput').addEventListener('input',()=>{lastRoadCosts={katy:0,torrance:0};routeLayer.clearLayers();currentActiveRoute=null});
-loadEdit();applyFilters();calcTrade();
+const uiTranslations={
+  "SOLION 북미 거래·입지 맵":"SOLION North America Trading & Location Map",
+  "SOLION 북미 거래·입지 대시보드":"SOLION North America Trading & Location Dashboard",
+  "기존 자료를 이관한 작업용 지도입니다. 시설의 최신 가동·규격·물량·주소는 독립 검증하지 않았습니다. 마커는 ‘원본 기재·미검증’ 또는 ‘후보’입니다.":"Working map migrated from the original dataset. Current facility status, specifications, volumes and addresses have not been independently verified. Markers indicate unverified source records or candidate locations.",
+  "거래 검토: 외부 판매·구매 여부, 규격, 월 물량과 등록절차를 우선 확인하세요.":"Trading: prioritize external sales/purchases, specifications, monthly availability and vendor registration.",
+  "투자 검토: 원료 확보량, 전력·용수·폐수, 인허가, 경쟁시설, 인수 의향을 메모하세요.":"Investment: record feedstock availability, power, water, wastewater, permits, competitors and acquisition interest.",
+  "시설 능력과 별개인 거래 시나리오입니다. 가격은 상단의 수동 가정값(시세 연동 없음). Li는 탄산리튬 기준이며 Li 원소함량에 5.323을 곱해 환산합니다.":"Independent transaction scenario. Prices above are manual assumptions, not live quotes. Li uses lithium carbonate pricing, with elemental Li content multiplied by 5.323.",
+  "사무실을 화물 경유지로 가정하지 않습니다. 출발·도착 창고/시설을 선택하세요. 도로 API는 일반 차량 경로 참고이며 위험물·대형트럭 운행 검증이 아닙니다.":"Select actual origin and destination facilities or warehouses. Offices are not assumed to be cargo waypoints. Road API results are general driving references, not validated hazmat or truck routes.",
+  "선택 시설의 실사·영업 확인 내용을 기록합니다. 브라우저 저장은 이 파일·브라우저 환경에 한정됩니다. JSON 내보내기로 백업하세요.":"Record due diligence and commercial confirmations. Browser storage is limited to this file/browser environment. Export JSON for backup.",
+  "① 시설 클릭 → 원본과 확인정보 구분 ② 거래처 메모에 검증 결과 기록 ③ 실제 원료 분석표로 가격 계산 ④ 실제 시설·창고 간 경로와 운송사 견적 비교.":"1. Open a facility and distinguish source records from verified notes. 2. Record findings. 3. Calculate values using actual assays. 4. Compare facility routes and carrier quotes.",
+  "300/650km는 직선거리 탐색 구간이며 경제성 한계가 아닙니다. 지도·Leaflet·도로 조회는 인터넷이 필요합니다. 좌표는 원본의 대략 위치입니다.":"300/650 km are straight-line search bands, not economic limits. Map tiles, Leaflet and road lookup require internet access. Coordinates are approximate source locations.",
+  "수출 거래는 BIS 예외·승인 적용 여부와 폐기물·운송 규제를 개별 확인하세요. 이 지도는 수출 가능 여부나 지원금 수급 자격을 판정하지 않습니다.":"Check applicable BIS authorizations/exceptions and waste/transport rules for each export transaction. This map does not determine export eligibility or incentive qualification.",
+  "예시 입력값이며 견적·수익 보장이 아닙니다. 고정비·법인세 전 금액. 계약에 회수율이 별도 적용될 경우 지급률과 중복 반영하지 않도록 확인하세요.":"Illustrative inputs, not a quotation or profit guarantee. Before fixed costs and corporate tax. Avoid double-counting recovery factors already included in contractual payables.",
+  "직선거리 × 1.2 가정. 선택 구간별 시나리오이며 합산하지 않습니다. 실제 도로·운송 견적과 다릅니다.":"Assumes straight-line distance × 1.2. Separate band scenarios; do not add together. Actual road distances and carrier quotes differ.",
+  "철도 운송 방향 개념선입니다. 실제 철도 선형·운영사·터미널·화물 수탁 여부는 미확인입니다. 거리·운임·소요일·절감률은 산출하지 않습니다. 사무실은 철도 화물 인도 지점이 아닙니다.":"Conceptual rail direction only. Actual alignment, operators, terminals and cargo acceptance are unverified. No distance, rate, transit time or savings are calculated. Offices are not rail delivery terminals.",
+  "수치와 함량·수분·지급률 범위를 확인하세요.":"Check numeric values, assay, moisture and payable ranges.",
+  "원본 기재 시설 / 최신 상태·주소 미검증":"Source facility record / current status and address unverified",
+  "후보 권역·개념 위치 / 운영사·계약 미확인":"Candidate area / operator and contract unverified",
+  "담당자·원료 규격·기존 계약·거래 가능 여부 확인 필요":"Confirm contact, specifications, existing contracts and transaction availability",
+  "전처리, 습식, 건식, 전기화학, 직접재생":"Preprocessing, hydrometallurgy, pyrometallurgy, electrochemical, direct recycling",
+  "직선 반경 탐색":"Straight-line radius search",
+  "시설 메모·확인정보 편집":"Edit facility notes & verification",
+  "시설 목록 · 클릭해 상세 확인":"Facilities · click for details",
+  "거래 원료 가치·공헌이익 계산":"Feedstock value & contribution margin",
+  "실제 거래 경로·운송비 비교":"Transaction routes & freight comparison",
+  "자료 내보내기·가져오기":"Export & import data",
+  "정책·자료 기준과 사용법":"Policy, data basis & instructions",
+  "거래처 발굴 / 입지 검토":"Counterparty sourcing / location review",
+  "1단계 · 유통·트레이딩":"Stage 1 · Distribution & trading",
+  "2단계 · 생산시설 투자":"Stage 2 · Processing facility investment",
+  "기업·도시·주 검색":"Search company, city or state",
+  "LFP 전용 제외 (혼합·불명은 확인대상 유지)":"Exclude LFP-only (retain mixed/unknown for review)",
+  "LFP 혼합·불명 별도 확인":"Review mixed/unknown LFP separately",
+  "주거지 후보 표시":"Show residential candidates",
+  "원본 가동 기재":"Operating in source",
+  "원본 건설 기재":"Construction in source",
+  "후보 / 개념":"Candidate / concept",
+  "실제 시설 원본":"Source facility records",
+  "후보·개념":"Candidates/concepts",
+  "Ni 매출 지급률 %":"Ni sales payable %",
+  "Co 매출 지급률 %":"Co sales payable %",
+  "Li 매출 지급률 %":"Li sales payable %",
+  "Li 원소 함량 %":"Elemental Li assay %",
+  "Ni 함량 %":"Ni assay %",
+  "Co 함량 %":"Co assay %",
+  "수분 %":"Moisture %",
+  "처리·불순물 공제 $/건톤":"Treatment/impurity deduction $/dmt",
+  "매입 $/습톤":"Purchase $/wmt",
+  "물류·검사·금융 $/습톤":"Freight/assay/finance $/wmt",
+  "월 거래량 습톤":"Monthly volume wmt",
+  "함유금속 이론가치":"Theoretical contained-metal value",
+  "가정 매출 정산":"Assumed sales settlement",
+  "습톤 환산 매출":"Sales per wet tonne",
+  "월 공헌이익":"Monthly contribution margin",
+  "공헌이익":"Contribution margin",
+  "/건톤":"/dmt",
+  "/습톤":"/wmt",
+  "출발·도착과 견적을 입력하세요.":"Select endpoints and enter a quote.",
+  "선택 구간 도로 조회":"Look up selected road route",
+  "견적 기준 비용 계산":"Calculate quoted cost",
+  "실적재량 t":"Net payload t",
+  "배차 견적 USD/대":"Carrier quote USD/load",
+  "포장·상하차 USD/t":"Packing/handling USD/t",
+  "보관·기타 USD/t":"Storage/other USD/t",
+  "운송사 확인값":"Carrier-confirmed amount",
+  "월 외부 거래가능량 t (불명은 공란)":"External volume t/month (blank if unknown)",
+  "담당자·규격·계약·인허가 메모":"Contact / specs / contracts / permits",
+  "공정 (복수는 쉼표 구분)":"Process (comma-separated)",
+  "확인정보 편집":"Edit verification",
+  "외부 거래가능량":"External available volume",
+  "원본 화학/공정 표기":"Source chemistry/process",
+  "원본 상태":"Source status",
+  "원본 능력":"Source capacity",
+  "기준·실제 처리량 미확인":"Basis and actual throughput unverified",
+  "확인 상태":"Verification status",
+  "거래 역할":"Trading role",
+  "확인 근거":"Verification source",
+  "확인일":"Verified on",
+  "근거 URL":"Source URL",
+  "메모 저장":"Save notes",
+  "블랙매스 판매처":"Black mass seller",
+  "블랙매스 구매처":"Black mass buyer",
+  "원료 공급처":"Feedstock supplier",
+  "물류 수탁처":"Logistics provider",
+  "임가공처":"Toll processor",
+  "경쟁사":"Competitor",
+  "JSON 백업 복원":"Restore JSON backup",
+  "JSON 백업":"JSON backup",
+  "현재 필터 CSV":"Filtered CSV",
+  "브라우저에 저장됨":"Saved in this browser",
+  "메모리 반영됨. 브라우저 저장 불가: JSON 백업 필요":"Updated in memory. Browser storage unavailable: export JSON.",
+  "백업을 병합했습니다.":"Backup merged.",
+  "가져오기 실패":"Import failed",
+  "파일 크기 초과":"File too large",
+  "v8 백업 형식 아님":"Not a v8 backup",
+  "물량은 0 이상이어야 합니다.":"Volume must be zero or greater.",
+  "http/https 근거 URL을 입력하세요.":"Enter an http/https source URL.",
+  "운송 분류 미확인: 비용 계산 보류":"Transport classification unknown: calculation withheld",
+  "유효한 단가·물량을 입력하세요.":"Enter a valid rate and volume.",
+  "거래가능량 확인 시설 없음 — 비용 산출 보류":"No facilities with confirmed available volume — cost withheld",
+  "현재 필터 기준":"Based on current filters",
+  "물량 가중":"Volume-weighted",
+  "가정 도로":"Assumed road distance",
+  "서로 다른 지점을 선택하세요.":"Choose different endpoints.",
+  "도로 조회 중…":"Looking up road route…",
+  "순수 주행":"Driving only",
+  "일반 도로 참고값; 휴식·대기·운행제한 별도.":"General road reference; rest, waiting and restrictions excluded.",
+  "도로 조회 실패":"Road lookup failed",
+  "인터넷·서비스 상태를 확인하세요.":"Check your internet connection and service availability.",
+  "적재량과 운송사 견적·추가비용을 입력하세요.":"Enter payload, carrier quote and additional costs.",
+  "견적 기준":"Quote basis",
+  "견적 범위 밖 항목은 별도.":"Items outside quote scope are additional.",
+  "포장·상하차":"Packing/handling",
+  "보관·기타":"Storage/other",
+  "배차":"Truck dispatch",
+  "업무 모드":"Work mode",
+  "분류":"Category",
+  "전체":"All",
+  "표시":"Showing",
+  "거래 미확인":"Trading unverified",
+  "미등록":"Not recorded",
+  "미확인":"Unverified",
+  "상업가동":"Commercial operation",
+  "시운전":"Commissioning",
+  "계획":"Planned",
+  "건설":"Construction",
+  "중단":"Suspended",
+  "취소":"Cancelled",
+  "후보":"Candidate",
+  "공정":"Process",
+  "출발":"Origin",
+  "도착":"Destination",
+  "계산":"Calculate",
+  "근거:":"Source:",
+  "/년":"/year",
+  "/월":"/month",
+  "개소":"sites",
+  "개 ":" sites ",
+  "개":" sites",
+  "시간":"hours",
+  "직선":"straight-line",
+  "레이어:":"Layers:",
+  "셀/소재":"Cells/materials",
+  "법인/물류인프라":"Offices/logistics",
+  "표준 지도":"Street map",
+  "캔버스":"Light canvas",
+  "위성":"Satellite",
+  "가정 가격 USD/t:":"Assumed price USD/t:",
+  "가정 $/gal:":"Assumed $/gal:",
+  "케이티 도로":"Katy road",
+  "토랜스 도로":"Torrance road",
+  "케이티 개념선":"Katy rail concept",
+  "토랜스 개념선":"Torrance rail concept",
+  "제도·확인사항":"Policy & checks",
+  "입지 및 물류비용 분석":"Location & freight analysis",
+  "예상 물류비용 시뮬레이터":"Freight scenario calculator",
+  "북미 내륙 트럭 기준":"North America inland trucking",
+  "운임 단가 ($ / ton·km):":"Freight rate ($ / t·km):",
+  "연간 물동량 (톤 / 년):":"Annual volume (t/year):",
+  "운송 분류·비용 가정:":"Transport classification / cost assumption:",
+  "분류 미확인 — 계산 보류":"Classification unverified — calculation withheld",
+  "분류 확인·기본 시나리오 (1.0x)":"Classification confirmed / base scenario (1.0x)",
+  "가정 할증 시나리오 (1.35x)":"Assumed surcharge scenario (1.35x)",
+  "EPA · 블랙매스·폐기물 판단":"EPA · Black mass & waste classification",
+  "IRS · 48C 요건":"IRS · 48C requirements",
+  "미국 Census · 블랙매스 수출 관련 공지":"US Census · Black mass export notice",
+  "전처리":"Preprocessing",
+  "습식제련":"Hydrometallurgy",
+  "습식":"Hydrometallurgy",
+  "건식":"Pyrometallurgy",
+  "전기화학 정련":"Electrochemical refining",
+  "전기화학":"Electrochemical",
+  "직접재생":"Direct recycling",
+  "지원제도 검토 권역입니다. 주 경계·수급 자격을 나타내지 않습니다.":"Incentive review area; does not indicate state boundaries or eligibility.",
+  "45X·48C는 사업·제품·배정·현행 규정별 확인 필요.":"Check 45X/48C by activity, product, allocation and current rules.",
+  "단순 무역법인에 제조 세액공제를 자동 적용하지 않습니다.":"Manufacturing credits do not automatically apply to trading entities.",
+  "텍사스: franchise tax 별도 검토.":"Texas: review franchise tax separately.",
+  "캐나다: 미국 제도와 구분하여 확인.":"Canada: verify separately from US programs.",
+  "반경시뮬: OFF":"Radius: OFF",
+  "반경시뮬: ON (클릭)":"Radius: ON (click map)",
+  "반경시뮬: ON":"Radius: ON",
+  "다크":"Dark",
+  "라이트":"Light",
+  "초기화":"Reset",
+  "신규 후보지":"New candidate",
+  "선택 시설 주변":"Around selected facility",
+  "대규모 수거":"Large-scale collection",
+  "대규모 정련":"Large-scale refining",
+  "리튬 고순도 정련":"High-purity lithium refining",
+  "탄산리튬":"Lithium carbonate",
+  "블랙매스":"Black mass",
+  "EV 팩 스크랩":"EV pack scrap",
+  "EV 스크랩":"EV scrap",
+  "Li-ion 스크랩":"Li-ion scrap",
+  "EV 불량품":"EV rejects",
+  "46시리즈/LFP":"46-series/LFP",
+  "양극재":"Cathode material",
+  "서부 영업 HQ":"Western sales HQ",
+  "남서부 영업 HQ":"Southwest sales HQ",
+  "비즈니스":"Business",
+  "타운하우스":"Townhouse",
+  "단독주택":"Detached house",
+  "글래스 타워":"Office tower",
+  "주거":"Residence",
+  "컨테이너 1위":"Top container port (source claim)",
+  "걸프만 최대 무역항":"Largest Gulf trade port (source claim)",
+  "해상물류":"Ocean logistics",
+  "벌크/컨테이너":"Bulk/container",
+  "특수화물 보관":"Special cargo storage",
+  "보세창고":"Bonded warehouse",
+  "대형 풀필먼트":"Large fulfillment center",
+  "물류센터":"Logistics center",
+  "정련":"Refining",
+  "톤":"t"
+};
+
+const uiPairs=Object.entries(uiTranslations)
+  .sort((a,b)=>b[0].length-a[0].length);
+
+const uiOriginals=new WeakMap();
+
+function englishText(text){
+  let out=text;
+
+  facilities
+    .slice()
+    .sort((a,b)=>b.name.length-a.name.length)
+    .forEach(f=>{
+      out=out.split(f.name).join(f.nameEn);
+    });
+
+  for(const [ko,en] of uiPairs){
+    out=out.split(ko).join(en);
+  }
+
+  return out;
+}
+
+function localizeNode(node,attribute){
+  const raw=attribute?node.getAttribute(attribute):node.nodeValue;
+  if(raw===null) return;
+
+  let record=uiOriginals.get(node);
+  if(!record){
+    record={};
+    uiOriginals.set(node,record);
+  }
+
+  const key=attribute||'text';
+  let state=record[key];
+
+  if(!state||raw!==state.rendered){
+    state={original:raw,rendered:raw};
+    record[key]=state;
+  }
+
+  const next=currentLang==='en'
+    ?englishText(state.original)
+    :state.original;
+
+  if(next!==raw){
+    if(attribute) node.setAttribute(attribute,next);
+    else node.nodeValue=next;
+  }
+
+  state.rendered=next;
+}
+
+const languageObserver=new MutationObserver(()=>translateUI());
+
+function translateUI(){
+  languageObserver.disconnect();
+  document.documentElement.lang=currentLang;
+
+  const walker=document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode:n=>{
+        if(n.parentElement?.closest('script,style,textarea')){
+          return NodeFilter.FILTER_REJECT;
+        }
+        if(n.parentElement?.closest('.user-note')){
+          const text=n.nodeValue.trim();
+          if(text!=='담당자·원료 규격·기존 계약·거래 가능 여부 확인 필요'){
+            return NodeFilter.FILTER_REJECT;
+          }
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  let n;
+  while(n=walker.nextNode()) localizeNode(n);
+
+  document.querySelectorAll('[placeholder],[title]').forEach(el=>{
+    ['placeholder','title'].forEach(attr=>{
+      if(el.hasAttribute(attr)) localizeNode(el,attr);
+    });
+  });
+
+  $('langBtn').textContent=currentLang==='ko'?'🌐 EN':'🌐 KO';
+
+  languageObserver.observe(document.body,{
+    subtree:true,
+    childList:true,
+    characterData:true
+  });
+}
+
+function toggleLanguage(){
+  currentLang=currentLang==='ko'?'en':'ko';
+
+  applyFilters();
+  calcTrade();
+
+  if($('analysisPanel').style.display==='block'){
+    updateLogisticsCost();
+    renderCapturedList();
+  }
+
+  if(isIraActive){
+    isIraActive=false;
+    toggleIraLayer();
+  }
+
+  translateUI();
+}
+
+translateUI();
 </script>
 </body>
 </html>
