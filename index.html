@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SOLION 북미 거래·입지 대시보드 v8.1</title>
+<title>SOLION 북미 거래·입지 대시보드 v8.2</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
 *{box-sizing:border-box}
 body{
@@ -14,11 +15,7 @@ body{
   overflow:hidden;
   color:#1e293b;
 }
-#map{
-  width:100vw;
-  height:100vh;
-  background:#cbd5e1;
-}
+#map{width:100vw;height:100vh;background:#cbd5e1}
 .dark-mode-map .leaflet-tile-pane{
   filter:brightness(.85) invert(1) contrast(1.3) hue-rotate(200deg);
 }
@@ -32,10 +29,7 @@ button,input,select{
   color:#1e293b;
   background:#fff;
 }
-button{
-  cursor:pointer;
-  transition:background .2s;
-}
+button{cursor:pointer;transition:background .2s}
 button:hover{background:#f1f5f9}
 input[type=checkbox]{vertical-align:middle}
 textarea{
@@ -77,6 +71,28 @@ textarea{
   font-size:11px;
   color:#fff;
   background:#2563eb;
+}
+.global-search-box{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  flex-wrap:wrap;
+  background:#eff6ff;
+  border:1px solid #93c5fd;
+  border-radius:8px;
+  padding:5px 7px;
+  font-size:11px;
+}
+.global-search-box label{font-weight:800}
+.global-search-box input{
+  width:230px;
+  min-width:160px;
+  font-size:12px;
+}
+#globalSearchCount{
+  font-size:11px;
+  font-weight:700;
+  color:#1d4ed8;
 }
 .layer-group-box{
   display:flex;
@@ -120,24 +136,11 @@ textarea{
   font-size:11px;
   font-weight:700;
 }
-.fuel-input{
-  width:60px;
-  text-align:center;
-}
-.btn-primary{
-  color:#fff;
-  border-color:#1e293b;
-  background:#1e293b;
-}
+.fuel-input{width:60px;text-align:center}
+.btn-primary{color:#fff;border-color:#1e293b;background:#1e293b}
 .btn-primary:hover{background:#334155}
-.btn-active{
-  color:#fff!important;
-  background:#dc2626!important;
-}
-.btn-lang{
-  color:#fff!important;
-  background:#059669!important;
-}
+.btn-active{color:#fff!important;background:#dc2626!important}
+.btn-lang{color:#fff!important;background:#059669!important}
 .btn-route-katy{color:#fff;background:#d97706}
 .btn-route-torrance{color:#fff;background:#2563eb}
 .btn-rail{color:#fff;background:#7c3aed}
@@ -162,31 +165,16 @@ textarea{
   font-weight:800;
   cursor:pointer;
 }
-.tools label{
-  display:block;
-  margin:7px 0;
-}
-.tools select{
-  display:block;
-  width:100%;
-  margin-top:4px;
-}
+.tools label{display:block;margin:7px 0}
+.tools select{display:block;width:100%;margin-top:4px}
 .tools input{max-width:100%}
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:6px;
 }
-.grid input{
-  display:block;
-  width:100%;
-  margin-top:4px;
-}
-.muted{
-  color:#64748b;
-  font-size:11px;
-  line-height:1.5;
-}
+.grid input{display:block;width:100%;margin-top:4px}
+.muted{color:#64748b;font-size:11px;line-height:1.5}
 .result{
   margin:8px 0;
   padding:10px;
@@ -209,6 +197,21 @@ textarea{
   text-align:left;
   white-space:normal;
 }
+.status-tag{
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:4px;
+  background:#fff7ed;
+  color:#9a3412;
+  font-size:10px;
+  margin:2px 0;
+}
+.status-tag.cancelled{background:#f1f5f9;color:#475569}
+.facility-evidence{
+  margin:8px 0;
+  border-top:1px solid #e2e8f0;
+  padding-top:7px;
+}
 .infra-shortcuts{
   margin:10px 0;
   padding:9px;
@@ -222,10 +225,7 @@ textarea{
   gap:5px;
   margin:8px 0;
 }
-.infra-quick-grid button{
-  min-height:32px;
-  white-space:normal;
-}
+.infra-quick-grid button{min-height:32px;white-space:normal}
 .property-link{
   display:block;
   margin:6px 0;
@@ -285,11 +285,7 @@ textarea{
   border-bottom:2px solid #1e293b;
 }
 .panel-title{font-size:14px;font-weight:800}
-.close-btn{
-  border:none;
-  font-size:18px;
-  background:none;
-}
+.close-btn{border:none;font-size:18px;background:none}
 .calc-box{
   margin-bottom:12px;
   padding:10px;
@@ -297,11 +293,7 @@ textarea{
   border-radius:8px;
   background:#f8fafc;
 }
-.calc-title{
-  margin-bottom:8px;
-  color:#1e3a8a;
-  font-weight:800;
-}
+.calc-title{margin-bottom:8px;color:#1e3a8a;font-weight:800}
 .calc-row{
   display:flex;
   align-items:center;
@@ -342,17 +334,18 @@ body.night .tools summary{color:#93c5fd}
 body.night .result,
 body.night .calc-box,
 body.night .calc-result,
-body.night .infra-shortcuts{
+body.night .infra-shortcuts,
+body.night .global-search-box{
   color:#e2e8f0;
   background:#26364e;
 }
 body.night .muted{color:#b4c3d8}
+body.night #globalSearchCount{color:#93c5fd}
 @media(max-width:760px){
-  .control-box{
-    gap:4px;
-    padding:8px;
-  }
+  .control-box{gap:4px;padding:8px}
   .title-badge{font-size:12px}
+  .global-search-box{width:100%}
+  .global-search-box input{flex:1;min-width:120px;width:auto}
   .tools{
     top:210px;
     width:290px;
@@ -367,28 +360,34 @@ body.night .muted{color:#b4c3d8}
 }
 </style>
 </head>
-<body>
 
+<body>
 <div class="control-box" id="topControls">
   <div class="title-badge">
     <span id="uiTitle">⚡ SOLION 북미 거래·입지 맵</span>
-    <span class="ver-tag">v8.1</span>
+    <span class="ver-tag">v8.2</span>
+  </div>
+
+  <div class="global-search-box" role="search">
+    <label for="globalSearch">🔎 <span>회사·지역 검색</span></label>
+    <input
+      id="globalSearch"
+      type="search"
+      autocomplete="off"
+      placeholder="성일하이텍 / SungEel / 지역명"
+      oninput="runCompanySearch(this.value,'top')"
+      onkeydown="handleSearchKey(event)"
+    >
+    <button type="button" onclick="runCompanySearch('','top')" title="검색 지우기">✕</button>
+    <button type="button" onclick="runCompanySearch('성일하이텍','top',true)">성일하이텍</button>
+    <span id="globalSearchCount" role="status" aria-live="polite"></span>
   </div>
 
   <div class="layer-group-box">
     <span>👁️ 레이어:</span>
-    <label>
-      <input type="checkbox" id="chkCellMat" checked onchange="applyFilters()">
-      셀/소재
-    </label>
-    <label>
-      <input type="checkbox" id="chkSpokeHub" checked onchange="applyFilters()">
-      Spoke-Hub
-    </label>
-    <label>
-      <input type="checkbox" id="chkCorpInfra" checked onchange="applyFilters()">
-      법인/물류인프라
-    </label>
+    <label><input type="checkbox" id="chkCellMat" checked onchange="applyFilters()"> 셀/소재</label>
+    <label><input type="checkbox" id="chkSpokeHub" checked onchange="applyFilters()"> Spoke-Hub</label>
+    <label><input type="checkbox" id="chkCorpInfra" checked onchange="applyFilters()"> 법인/물류인프라</label>
   </div>
 
   <select id="mapStyleSelect" onchange="changeBaseMap()">
@@ -416,7 +415,6 @@ body.night .muted{color:#b4c3d8}
   <button class="btn-route-torrance" onclick="loadNavigationRoute('torrance')">🚛 토랜스 도로</button>
   <button class="btn-rail" onclick="loadRailRoute('katy')">🚂 케이티 개념선</button>
   <button class="btn-rail" onclick="loadRailRoute('torrance')">🚆 토랜스 개념선</button>
-
   <button id="simBtn" onclick="toggleSimMode()">🎯 반경시뮬: OFF</button>
   <button id="iraBtn" onclick="toggleIraLayer()">🏛️ 제도·확인사항</button>
   <button id="langBtn" class="btn-lang" onclick="toggleLanguage()">🌐 EN</button>
@@ -443,7 +441,8 @@ body.night .muted{color:#b4c3d8}
     id="search"
     type="text"
     placeholder="기업·도시·주 검색"
-    oninput="applyFilters()"
+    oninput="runCompanySearch(this.value,'side')"
+    onkeydown="handleSearchKey(event)"
     style="width:100%"
   >
 
@@ -470,6 +469,8 @@ body.night .muted{color:#b4c3d8}
         <option value="Operating">원본 가동 기재</option>
         <option value="Construction">원본 건설 기재</option>
         <option value="Candidate">후보 / 개념</option>
+        <option value="Unknown">최신 가동 미확인</option>
+        <option value="Cancelled">계획 철회 / 취소</option>
       </select>
     </label>
   </div>
@@ -486,14 +487,12 @@ body.night .muted{color:#b4c3d8}
 
   <div class="infra-shortcuts">
     <b>🏡 주거·오피스 바로보기</b>
-
     <div class="infra-quick-grid">
       <button onclick="showInfraCategory('Residence')">🏡 주거 후보 2곳</button>
       <button onclick="showInfraCategory('Office')">🏢 오피스 후보 2곳</button>
       <button onclick="jumpToInfra('facility-22')">📍 West Torrance · 90503</button>
       <button onclick="jumpToInfra('facility-24')">📍 Cinco Ranch · 77494</button>
     </div>
-
     <div class="muted">
       보라색 집 = 주거 · 남색 빌딩 = 오피스 · 청록색 창고 = 물류 후보. 모든 핀은 대략적인 검토 권역입니다.
     </div>
@@ -509,11 +508,9 @@ body.night .muted{color:#b4c3d8}
 
   <details>
     <summary>거래 원료 가치·공헌이익 계산</summary>
-
     <div class="muted">
       시설 능력과 별개인 거래 시나리오입니다. 가격은 상단의 수동 가정값(시세 연동 없음). Li는 탄산리튬 기준이며 Li 원소함량에 5.323을 곱해 환산합니다.
     </div>
-
     <div class="grid" id="assayInputs"></div>
     <button onclick="calcTrade()">계산</button>
     <div id="tradeResult" class="result"></div>
@@ -521,34 +518,17 @@ body.night .muted{color:#b4c3d8}
 
   <details>
     <summary>실제 거래 경로·운송비 비교</summary>
-
     <div class="muted">
       사무실을 화물 경유지로 가정하지 않습니다. 출발·도착 창고/시설을 선택하세요. 도로 API는 일반 차량 경로 참고이며 위험물·대형트럭 운행 검증이 아닙니다.
     </div>
-
     <label>출발<select id="origin"></select></label>
     <label>도착<select id="destination"></select></label>
 
     <div class="grid">
-      <label>
-        실적재량 t
-        <input id="payload" type="number" min=".1" step="any" value="20">
-      </label>
-
-      <label>
-        배차 견적 USD/대
-        <input id="quote" type="number" min="0" step="any" placeholder="운송사 확인값">
-      </label>
-
-      <label>
-        포장·상하차 USD/t
-        <input id="handling" type="number" min="0" step="any" value="0">
-      </label>
-
-      <label>
-        보관·기타 USD/t
-        <input id="otherCost" type="number" min="0" step="any" value="0">
-      </label>
+      <label>실적재량 t<input id="payload" type="number" min=".1" step="any" value="20"></label>
+      <label>배차 견적 USD/대<input id="quote" type="number" min="0" step="any" placeholder="운송사 확인값"></label>
+      <label>포장·상하차 USD/t<input id="handling" type="number" min="0" step="any" value="0"></label>
+      <label>보관·기타 USD/t<input id="otherCost" type="number" min="0" step="any" value="0"></label>
     </div>
 
     <button onclick="routeSelected()">선택 구간 도로 조회</button>
@@ -558,7 +538,6 @@ body.night .muted{color:#b4c3d8}
 
   <details id="editDetails">
     <summary>시설 메모·확인정보 편집</summary>
-
     <div class="muted">
       선택 시설의 실사·영업 확인 내용을 기록합니다. 브라우저 저장은 이 파일·브라우저 환경에 한정됩니다. JSON 내보내기로 백업하세요.
     </div>
@@ -580,12 +559,7 @@ body.night .muted{color:#b4c3d8}
 
     <label>
       공정 (복수는 쉼표 구분)
-      <input
-        id="editProcess"
-        type="text"
-        style="width:100%"
-        placeholder="전처리, 습식, 건식, 전기화학, 직접재생"
-      >
+      <input id="editProcess" type="text" style="width:100%" placeholder="전처리, 습식, 건식, 전기화학, 직접재생">
     </label>
 
     <label>
@@ -602,25 +576,10 @@ body.night .muted{color:#b4c3d8}
       </select>
     </label>
 
-    <label>
-      월 외부 거래가능량 t (불명은 공란)
-      <input id="editVolume" type="number" min="0" step="any">
-    </label>
-
-    <label>
-      확인일
-      <input id="editDate" type="date">
-    </label>
-
-    <label>
-      근거 URL
-      <input id="editSource" type="url" style="width:100%">
-    </label>
-
-    <label>
-      담당자·규격·계약·인허가 메모
-      <textarea id="editMemo" rows="4"></textarea>
-    </label>
+    <label>월 외부 거래가능량 t (불명은 공란)<input id="editVolume" type="number" min="0" step="any"></label>
+    <label>확인일<input id="editDate" type="date"></label>
+    <label>근거 URL<input id="editSource" type="url" style="width:100%"></label>
+    <label>담당자·규격·계약·인허가 메모<textarea id="editMemo" rows="4"></textarea></label>
 
     <button onclick="saveEdit()">메모 저장</button>
     <span id="saveStatus" class="muted"></span>
@@ -628,58 +587,27 @@ body.night .muted{color:#b4c3d8}
 
   <details>
     <summary>자료 내보내기·가져오기</summary>
-
     <button onclick="exportData(false)">JSON 백업</button>
     <button onclick="exportData(true)">현재 필터 CSV</button>
-
     <label>
       JSON 백업 복원
       <input type="file" accept="application/json,.json" onchange="importData(event)">
     </label>
-
     <div id="dataStatus" class="muted"></div>
   </details>
 
   <details>
     <summary>정책·자료 기준과 사용법</summary>
-
     <div class="muted">
       ① 시설 클릭 → 원본과 확인정보 구분 ② 거래처 메모에 검증 결과 기록 ③ 실제 원료 분석표로 가격 계산 ④ 실제 시설·창고 간 경로와 운송사 견적 비교.
       <br>
       300/650km는 직선거리 탐색 구간이며 경제성 한계가 아닙니다. 지도·Leaflet·도로 조회는 인터넷이 필요합니다. 좌표는 원본의 대략 위치입니다.
     </div>
 
-    <p>
-      <a
-        href="https://www.epa.gov/hw/lithium-ion-battery-recycling-frequently-asked-questions"
-        target="_blank"
-        rel="noopener noreferrer"
-      >EPA · 블랙매스·폐기물 판단</a>
-    </p>
-
-    <p>
-      <a
-        href="https://www.irs.gov/credits-deductions/businesses/advanced-energy-project-credit"
-        target="_blank"
-        rel="noopener noreferrer"
-      >IRS · 48C 요건</a>
-    </p>
-
-    <p>
-      <a
-        href="https://comptroller.texas.gov/taxes/franchise/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >Texas · Franchise tax</a>
-    </p>
-
-    <p>
-      <a
-        href="https://content.govdelivery.com/accounts/USCENSUS/bulletins/426e589"
-        target="_blank"
-        rel="noopener noreferrer"
-      >미국 Census · 블랙매스 수출 관련 공지</a>
-    </p>
+    <p><a href="https://www.epa.gov/hw/lithium-ion-battery-recycling-frequently-asked-questions" target="_blank" rel="noopener noreferrer">EPA · 블랙매스·폐기물 판단</a></p>
+    <p><a href="https://www.irs.gov/credits-deductions/businesses/advanced-energy-project-credit" target="_blank" rel="noopener noreferrer">IRS · 48C 요건</a></p>
+    <p><a href="https://comptroller.texas.gov/taxes/franchise/" target="_blank" rel="noopener noreferrer">Texas · Franchise tax</a></p>
+    <p><a href="https://content.govdelivery.com/accounts/USCENSUS/bulletins/426e589" target="_blank" rel="noopener noreferrer">미국 Census · 블랙매스 수출 관련 공지</a></p>
 
     <div class="notice">
       수출 거래는 BIS 예외·승인 적용 여부와 폐기물·운송 규제를 개별 확인하세요. 이 지도는 수출 가능 여부나 지원금 수급 자격을 판정하지 않습니다.
@@ -699,26 +627,12 @@ body.night .muted{color:#b4c3d8}
 
     <div class="calc-row">
       <span>운임 단가 ($ / ton·km):</span>
-      <input
-        id="rateInput"
-        type="number"
-        value=".18"
-        min="0"
-        step=".01"
-        onchange="updateLogisticsCost()"
-      >
+      <input id="rateInput" type="number" value=".18" min="0" step=".01" onchange="updateLogisticsCost()">
     </div>
 
     <div class="calc-row">
       <span>연간 물동량 (톤 / 년):</span>
-      <input
-        id="tonInput"
-        type="number"
-        value="10000"
-        min="1"
-        step="1000"
-        onchange="updateLogisticsCost()"
-      >
+      <input id="tonInput" type="number" value="10000" min="1" step="1000" onchange="updateLogisticsCost()">
     </div>
 
     <div class="calc-row">
@@ -732,7 +646,6 @@ body.night .muted{color:#b4c3d8}
 
     <div id="costResultBox" class="calc-result"></div>
   </div>
-
   <div id="panelContent"></div>
 </div>
 
@@ -740,6 +653,10 @@ body.night .muted{color:#b4c3d8}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* =========================================================
+   1. 기본 설정
+   ========================================================= */
+
 let currentLang='ko';
 
 const $=id=>document.getElementById(id);
@@ -774,13 +691,8 @@ const safeUrl=value=>{
 
 const text=(ko,en)=>currentLang==='ko'?ko:en;
 
-const map=L.map('map',{
-  zoomControl:false
-}).setView([35,-96],4);
-
-L.control.zoom({
-  position:'bottomright'
-}).addTo(map);
+const map=L.map('map',{zoomControl:false}).setView([35,-96],4);
+L.control.zoom({position:'bottomright'}).addTo(map);
 
 const tileProviders={
   esri_street:L.tileLayer(
@@ -809,457 +721,305 @@ function changeBaseMap(){
 }
 
 const baseOffices={
-  torrance:{
-    lat:33.8358,
-    lng:-118.3406,
-    name:'토랜스 오피스 (HQ)'
-  },
-  katy:{
-    lat:29.7700,
-    lng:-95.6300,
-    name:'케이티 오피스 (HQ)'
-  }
+  torrance:{lat:33.8358,lng:-118.3406,name:'토랜스 오피스 (HQ)'},
+  katy:{lat:29.7700,lng:-95.6300,name:'케이티 오피스 (HQ)'}
 };
 
-/*
-  원본 자료 이관 데이터입니다.
-  가동 상태·능력·화학계·좌표는 독립 검증하지 않은 원본 기재값입니다.
-  facility ID와 기존 JSON 메모의 호환을 위해 배열 순서를 유지합니다.
-*/
+/* =========================================================
+   2. 시설 데이터
+
+   기존 시설의 가동·능력·좌표는 원본 이관값입니다.
+   시설 배열의 기존 순서를 바꾸면 저장 메모의 ID가 달라집니다.
+   새 시설은 배열 맨 아래에 추가하세요.
+   ========================================================= */
+
 const facilities=[
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'Ultium Cells #1 (GM-LGES)',
-    nameEn:'Ultium Cells #1',
-    status:'Operating',
-    state:'OH',
-    city:'Warren',
-    lat:41.203,
-    lng:-80.815,
-    capa:'40 GWh',
-    chem:'NCMA'
+    group:'CellMat',category:'Cell',
+    name:'Ultium Cells #1 (GM-LGES)',nameEn:'Ultium Cells #1',
+    status:'Operating',state:'OH',city:'Warren',
+    lat:41.203,lng:-80.815,capa:'40 GWh',chem:'NCMA'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'Ultium Cells #2 (GM-LGES)',
-    nameEn:'Ultium Cells #2',
-    status:'Operating',
-    state:'TN',
-    city:'Spring Hill',
-    lat:35.751,
-    lng:-86.930,
-    capa:'50 GWh',
-    chem:'NCMA'
+    group:'CellMat',category:'Cell',
+    name:'Ultium Cells #2 (GM-LGES)',nameEn:'Ultium Cells #2',
+    status:'Operating',state:'TN',city:'Spring Hill',
+    lat:35.751,lng:-86.930,capa:'50 GWh',chem:'NCMA'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'SK Battery America (SK On)',
-    nameEn:'SK Battery America',
-    status:'Operating',
-    state:'GA',
-    city:'Commerce',
-    lat:34.228,
-    lng:-83.456,
-    capa:'22 GWh',
-    chem:'NCM9'
+    group:'CellMat',category:'Cell',
+    name:'SK Battery America (SK On)',nameEn:'SK Battery America',
+    status:'Operating',state:'GA',city:'Commerce',
+    lat:34.228,lng:-83.456,capa:'22 GWh',chem:'NCM9'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'BlueOval SK #1, #2 (Ford-SK)',
-    nameEn:'BlueOval SK #1, #2',
-    status:'Construction',
-    state:'KY',
-    city:'Glendale',
-    lat:37.601,
-    lng:-85.905,
-    capa:'86 GWh',
-    chem:'NCM'
+    group:'CellMat',category:'Cell',
+    name:'BlueOval SK #1, #2 (Ford-SK)',nameEn:'BlueOval SK #1, #2',
+    status:'Construction',state:'KY',city:'Glendale',
+    lat:37.601,lng:-85.905,capa:'86 GWh',chem:'NCM'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'Hyundai-LGES JV (HL-GA)',
-    nameEn:'Hyundai-LGES JV',
-    status:'Construction',
-    state:'GA',
-    city:'Bryan County',
-    lat:32.148,
-    lng:-81.464,
-    capa:'30 GWh',
-    chem:'NCM'
+    group:'CellMat',category:'Cell',
+    name:'Hyundai-LGES JV (HL-GA)',nameEn:'Hyundai-LGES JV',
+    status:'Construction',state:'GA',city:'Bryan County',
+    lat:32.148,lng:-81.464,capa:'30 GWh',chem:'NCM'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'Tesla Gigafactory Texas',
-    nameEn:'Tesla Giga Texas',
-    status:'Operating',
-    state:'TX',
-    city:'Austin',
-    lat:30.222,
-    lng:-97.617,
-    capa:'100 GWh',
-    chem:'4680 NCM/LFP'
+    group:'CellMat',category:'Cell',
+    name:'Tesla Gigafactory Texas',nameEn:'Tesla Giga Texas',
+    status:'Operating',state:'TX',city:'Austin',
+    lat:30.222,lng:-97.617,capa:'100 GWh',chem:'4680 NCM/LFP'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'Tesla-Panasonic Giga Nevada',
-    nameEn:'Tesla Giga Nevada',
-    status:'Operating',
-    state:'NV',
-    city:'Sparks',
-    lat:39.538,
-    lng:-119.440,
-    capa:'39 GWh',
-    chem:'NCA'
+    group:'CellMat',category:'Cell',
+    name:'Tesla-Panasonic Giga Nevada',nameEn:'Tesla Giga Nevada',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.538,lng:-119.440,capa:'39 GWh',chem:'NCA'
   },
   {
-    group:'CellMat',
-    category:'Cell',
-    name:'LGES Arizona',
-    nameEn:'LGES Arizona',
-    status:'Construction',
-    state:'AZ',
-    city:'Queen Creek',
-    lat:33.248,
-    lng:-111.634,
-    capa:'53 GWh',
-    chem:'46시리즈/LFP'
+    group:'CellMat',category:'Cell',
+    name:'LGES Arizona',nameEn:'LGES Arizona',
+    status:'Construction',state:'AZ',city:'Queen Creek',
+    lat:33.248,lng:-111.634,capa:'53 GWh',chem:'46시리즈/LFP'
   },
   {
-    group:'CellMat',
-    category:'Material',
-    name:'LG Chem Tennessee Cathode',
-    nameEn:'LG Chem TN Cathode',
-    status:'Construction',
-    state:'TN',
-    city:'Clarksville',
-    lat:36.590,
-    lng:-87.359,
-    capa:'60k 톤',
-    chem:'NCMA 양극재'
+    group:'CellMat',category:'Material',
+    name:'LG Chem Tennessee Cathode',nameEn:'LG Chem TN Cathode',
+    status:'Construction',state:'TN',city:'Clarksville',
+    lat:36.590,lng:-87.359,capa:'60k 톤',chem:'NCMA 양극재'
   },
   {
-    group:'CellMat',
-    category:'Material',
-    name:'Ultium CAM (POSCO Future M)',
-    nameEn:'Ultium CAM',
-    status:'Operating',
-    state:'QC',
-    city:'Bécancour',
-    lat:46.380,
-    lng:-72.440,
-    capa:'30k 톤',
-    chem:'NCMA 양극재'
+    group:'CellMat',category:'Material',
+    name:'Ultium CAM (POSCO Future M)',nameEn:'Ultium CAM',
+    status:'Operating',state:'QC',city:'Bécancour',
+    lat:46.380,lng:-72.440,capa:'30k 톤',chem:'NCMA 양극재'
   },
   {
-    group:'CellMat',
-    category:'Material',
-    name:'EcoPro CAM Canada',
-    nameEn:'EcoPro CAM Canada',
-    status:'Construction',
-    state:'QC',
-    city:'Bécancour',
-    lat:46.365,
-    lng:-72.460,
-    capa:'45k 톤',
-    chem:'High-Ni NCM'
+    group:'CellMat',category:'Material',
+    name:'EcoPro CAM Canada',nameEn:'EcoPro CAM Canada',
+    status:'Construction',state:'QC',city:'Bécancour',
+    lat:46.365,lng:-72.460,capa:'45k 톤',chem:'High-Ni NCM'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'미 남동부 소싱 허브 (조지아)',
-    nameEn:'SE US Sourcing Hub (GA)',
-    status:'Operating',
-    state:'GA',
-    city:'Atlanta',
-    lat:33.749,
-    lng:-84.388,
-    capa:'대규모 수거',
-    chem:'EV 스크랩'
+    group:'SpokeHub',category:'Spoke',
+    name:'미 남동부 소싱 허브 (조지아)',nameEn:'SE US Sourcing Hub (GA)',
+    status:'Operating',state:'GA',city:'Atlanta',
+    lat:33.749,lng:-84.388,capa:'대규모 수거',chem:'EV 스크랩'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'Redwood Tahoe Spoke',
-    nameEn:'Redwood Tahoe Spoke',
-    status:'Operating',
-    state:'NV',
-    city:'Sparks',
-    lat:39.546,
-    lng:-119.520,
-    capa:'20GWh+',
-    chem:'블랙매스'
+    group:'SpokeHub',category:'Spoke',
+    name:'Redwood Tahoe Spoke',nameEn:'Redwood Tahoe Spoke',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.546,lng:-119.520,capa:'20GWh+',chem:'블랙매스'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'Redwood Carolina Spoke',
-    nameEn:'Redwood Carolina Spoke',
-    status:'Operating',
-    state:'SC',
-    city:'Ridgeville',
-    lat:33.095,
-    lng:-80.314,
-    capa:'20,000 톤',
-    chem:'EV 팩 스크랩'
+    group:'SpokeHub',category:'Spoke',
+    name:'Redwood Carolina Spoke',nameEn:'Redwood Carolina Spoke',
+    status:'Operating',state:'SC',city:'Ridgeville',
+    lat:33.095,lng:-80.314,capa:'20,000 톤',chem:'EV 팩 스크랩'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'ABTC Nevada Spoke',
-    nameEn:'ABTC Nevada Spoke',
-    status:'Operating',
-    state:'NV',
-    city:'McCarran',
-    lat:39.520,
-    lng:-119.480,
-    capa:'20,000 톤',
-    chem:'NCM·NCA'
+    group:'SpokeHub',category:'Spoke',
+    name:'ABTC Nevada Spoke',nameEn:'ABTC Nevada Spoke',
+    status:'Operating',state:'NV',city:'McCarran',
+    lat:39.520,lng:-119.480,capa:'20,000 톤',chem:'NCM·NCA'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'Blue Whale Materials Spoke',
-    nameEn:'Blue Whale Spoke',
-    status:'Construction',
-    state:'OK',
-    city:'Bartlesville',
-    lat:36.747,
-    lng:-95.980,
-    capa:'20,000 톤',
-    chem:'Li-ion 스크랩'
+    group:'SpokeHub',category:'Spoke',
+    name:'Blue Whale Materials Spoke',nameEn:'Blue Whale Spoke',
+    status:'Construction',state:'OK',city:'Bartlesville',
+    lat:36.747,lng:-95.980,capa:'20,000 톤',chem:'Li-ion 스크랩'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'Princeton NuEnergy Spoke',
-    nameEn:'Princeton NuEnergy Spoke',
-    status:'Operating',
-    state:'SC',
-    city:'Chester',
-    lat:34.704,
-    lng:-81.212,
-    capa:'5,000 톤',
-    chem:'직접재생'
+    group:'SpokeHub',category:'Spoke',
+    name:'Princeton NuEnergy Spoke',nameEn:'Princeton NuEnergy Spoke',
+    status:'Operating',state:'SC',city:'Chester',
+    lat:34.704,lng:-81.212,capa:'5,000 톤',chem:'직접재생'
   },
   {
-    group:'SpokeHub',
-    category:'Spoke',
-    name:'Lithion Technologies Spoke',
-    nameEn:'Lithion Spoke',
-    status:'Operating',
-    state:'QC',
-    city:'Saint-Bruno',
-    lat:45.526,
-    lng:-73.342,
-    capa:'15,000 톤',
-    chem:'EV 불량품'
+    group:'SpokeHub',category:'Spoke',
+    name:'Lithion Technologies Spoke',nameEn:'Lithion Spoke',
+    status:'Operating',state:'QC',city:'Saint-Bruno',
+    lat:45.526,lng:-73.342,capa:'15,000 톤',chem:'EV 불량품'
   },
   {
-    group:'SpokeHub',
-    category:'Hub',
-    name:'Redwood Tahoe Hub (통합)',
-    nameEn:'Redwood Tahoe Hub',
-    status:'Operating',
-    state:'NV',
-    city:'Sparks',
-    lat:39.530,
-    lng:-119.500,
-    capa:'대규모 정련',
-    chem:'습식제련'
+    group:'SpokeHub',category:'Hub',
+    name:'Redwood Tahoe Hub (통합)',nameEn:'Redwood Tahoe Hub',
+    status:'Operating',state:'NV',city:'Sparks',
+    lat:39.530,lng:-119.500,capa:'대규모 정련',chem:'습식제련'
   },
   {
-    group:'SpokeHub',
-    category:'Hub',
-    name:'Nth Cycle Fairfield Hub',
-    nameEn:'Nth Cycle Hub',
-    status:'Operating',
-    state:'OH',
-    city:'Fairfield',
-    lat:39.346,
-    lng:-84.555,
-    capa:'전기화학 정련',
-    chem:'MHP 정련'
+    group:'SpokeHub',category:'Hub',
+    name:'Nth Cycle Fairfield Hub',nameEn:'Nth Cycle Hub',
+    status:'Operating',state:'OH',city:'Fairfield',
+    lat:39.346,lng:-84.555,capa:'전기화학 정련',chem:'MHP 정련'
   },
   {
-    group:'SpokeHub',
-    category:'Hub',
-    name:'R3 Lithium Hub',
-    nameEn:'R3 Lithium Hub',
-    status:'Operating',
-    state:'GA',
-    city:'Covington',
-    lat:33.580,
-    lng:-83.840,
-    capa:'리튬 고순도 정련',
-    chem:'탄산리튬'
+    group:'SpokeHub',category:'Hub',
+    name:'R3 Lithium Hub',nameEn:'R3 Lithium Hub',
+    status:'Operating',state:'GA',city:'Covington',
+    lat:33.580,lng:-83.840,capa:'리튬 고순도 정련',chem:'탄산리튬'
   },
   {
-    group:'CorpInfra',
-    category:'Office',
-    name:'캘리포니아 토랜스 오피스 (HQ)',
-    nameEn:'Torrance Office (HQ)',
-    status:'Operating',
-    state:'CA',
-    city:'Torrance',
-    lat:33.8358,
-    lng:-118.3406,
-    capa:'서부 영업 HQ',
-    chem:'비즈니스',
+    group:'CorpInfra',category:'Office',
+    name:'캘리포니아 토랜스 오피스 (HQ)',nameEn:'Torrance Office (HQ)',
+    status:'Operating',state:'CA',city:'Torrance',
+    lat:33.8358,lng:-118.3406,capa:'서부 영업 HQ',chem:'비즈니스',
     linkUrl:'https://www.loopnet.com/search/office-space/torrance-ca/for-lease/'
   },
   {
-    group:'CorpInfra',
-    category:'Residence',
-    name:'토랜스 주거 후보: West Torrance',
-    nameEn:'West Torrance Residence',
-    status:'Operating',
-    state:'CA',
-    city:'Torrance',
-    lat:33.8290,
-    lng:-118.3550,
-    capa:'타운하우스',
-    chem:'주거',
+    group:'CorpInfra',category:'Residence',
+    name:'토랜스 주거 후보: West Torrance',nameEn:'West Torrance Residence',
+    status:'Operating',state:'CA',city:'Torrance',
+    lat:33.8290,lng:-118.3550,capa:'타운하우스',chem:'주거',
     linkUrl:'https://www.redfin.com/zipcode/90503/rentals'
   },
   {
-    group:'CorpInfra',
-    category:'Office',
-    name:'텍사스 케이티 오피스 (에너지 코리더)',
-    nameEn:'Katy Office (HQ)',
-    status:'Operating',
-    state:'TX',
-    city:'Houston',
-    lat:29.7700,
-    lng:-95.6300,
-    capa:'남서부 영업 HQ',
-    chem:'글래스 타워',
+    group:'CorpInfra',category:'Office',
+    name:'텍사스 케이티 오피스 (에너지 코리더)',nameEn:'Katy Office (HQ)',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7700,lng:-95.6300,capa:'남서부 영업 HQ',chem:'글래스 타워',
     linkUrl:'https://www.loopnet.com/search/office-space/houston-tx/for-lease/'
   },
   {
-    group:'CorpInfra',
-    category:'Residence',
-    name:'케이티 주거 후보: Cinco Ranch',
-    nameEn:'Cinco Ranch Residence',
-    status:'Operating',
-    state:'TX',
-    city:'Katy',
-    lat:29.7280,
-    lng:-95.7650,
-    capa:'단독주택',
-    chem:'주거',
+    group:'CorpInfra',category:'Residence',
+    name:'케이티 주거 후보: Cinco Ranch',nameEn:'Cinco Ranch Residence',
+    status:'Operating',state:'TX',city:'Katy',
+    lat:29.7280,lng:-95.7650,capa:'단독주택',chem:'주거',
     linkUrl:'https://www.redfin.com/zipcode/77494/rentals'
   },
   {
-    group:'CorpInfra',
-    category:'Port',
-    name:'롱비치 항 & LA 항 (Port Complex)',
-    nameEn:'Port of Long Beach / LA',
-    status:'Operating',
-    state:'CA',
-    city:'Long Beach',
-    lat:33.7542,
-    lng:-118.2165,
-    capa:'컨테이너 1위',
-    chem:'해상물류'
+    group:'CorpInfra',category:'Port',
+    name:'롱비치 항 & LA 항 (Port Complex)',nameEn:'Port of Long Beach / LA',
+    status:'Operating',state:'CA',city:'Long Beach',
+    lat:33.7542,lng:-118.2165,capa:'컨테이너 1위',chem:'해상물류'
   },
   {
-    group:'CorpInfra',
-    category:'Port',
-    name:'휴스턴 항 (Port of Houston)',
-    nameEn:'Port of Houston',
-    status:'Operating',
-    state:'TX',
-    city:'Houston',
-    lat:29.7355,
-    lng:-95.2750,
-    capa:'걸프만 최대 무역항',
-    chem:'벌크/컨테이너'
+    group:'CorpInfra',category:'Port',
+    name:'휴스턴 항 (Port of Houston)',nameEn:'Port of Houston',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7355,lng:-95.2750,capa:'걸프만 최대 무역항',chem:'벌크/컨테이너'
   },
   {
-    group:'CorpInfra',
-    category:'Warehouse',
-    name:'카슨/롱비치 3PL 보세창고',
-    nameEn:'Carson Bonded 3PL',
-    status:'Operating',
-    state:'CA',
-    city:'Carson',
-    lat:33.8317,
-    lng:-118.2570,
-    capa:'특수화물 보관',
-    chem:'보세창고'
+    group:'CorpInfra',category:'Warehouse',
+    name:'카슨/롱비치 3PL 보세창고',nameEn:'Carson Bonded 3PL',
+    status:'Operating',state:'CA',city:'Carson',
+    lat:33.8317,lng:-118.2570,capa:'특수화물 보관',chem:'보세창고'
   },
   {
-    group:'CorpInfra',
-    category:'Warehouse',
-    name:'휴스턴 3PL 물류센터 (Katy 3PL)',
-    nameEn:'Katy 3PL Center',
-    status:'Operating',
-    state:'TX',
-    city:'Houston',
-    lat:29.7800,
-    lng:-95.7000,
-    capa:'대형 풀필먼트',
-    chem:'물류센터'
+    group:'CorpInfra',category:'Warehouse',
+    name:'휴스턴 3PL 물류센터 (Katy 3PL)',nameEn:'Katy 3PL Center',
+    status:'Operating',state:'TX',city:'Houston',
+    lat:29.7800,lng:-95.7000,capa:'대형 풀필먼트',chem:'물류센터'
+  },
+
+  /* 성일하이텍 인디애나 */
+  {
+    group:'SpokeHub',
+    category:'Spoke',
+    name:'성일하이텍 인디애나 · SungEel Recycling Park Indiana',
+    nameEn:'SungEel HiTech · Indiana Recycling Park',
+    status:'Unknown',
+    state:'IN',
+    city:'Whitestown',
+    lat:39.9973,
+    lng:-86.3458,
+    capa:'20,000 tons/year (설계능력; 주정부 자료 원문 단위)',
+    chem:'Li-ion cell / electrode scrap; NCM·NCA·LCO 등 개별 수탁 미확인',
+    company:'SungEel HiTech 성일하이텍',
+    aliases:[
+      '성일','성일하이덱','성일하이택','성일 하이텍','선일하이텍',
+      'SungEel','Sung Eel','SungEel Recycling Park Indiana LLC',
+      '인디애나','인디아나','화이트스타운','Whitestown'
+    ],
+    researchProfile:true,
+    verifiedOn:'2026-11-11',
+    address:'4321 Albert S White Dr, Whitestown, IN 46075',
+    positionBasisKo:'핀은 Whitestown 시 단위 참고 좌표입니다. 공장 정밀 좌표가 아니며, 아래 확인 주소로 실제 위치를 조회하세요.',
+    positionBasisEn:'The pin is a city-level Whitestown reference, not a surveyed factory location. Use the verified address below to view the actual site.',
+    statusLabelKo:'2025년 개소 기록 · 현재 가동률·수탁 여부 미확인',
+    statusLabelEn:'Opened in 2025 per source; current utilization / acceptance unverified',
+    processKo:'파쇄·분쇄·분리 전처리 (Spoke). 미국 현지 습식제련 Hub로 분류하지 않음.',
+    processEn:'Shredding, grinding and separation preprocessing (Spoke); not classified as a US hydrometallurgical hub.',
+    summaryKo:'인디애나주 에너지개발국 공개 보고서는 2025년 3월 개소와 연 20,000 tons의 셀 스크랩 설계능력을 기재합니다. 실제 처리량이 아닙니다. IDEM의 2026년 3월 파일명 공고는 기존 시설 주소·파쇄/분쇄/분리 설비 및 허가 변경 신청을 확인해 주지만, 최종 허가 승인 또는 현재 가동률을 증명하지는 않습니다. 원료 규격·LFP 수탁·외부 블랙매스 판매·구매물량은 직접 확인이 필요합니다.',
+    summaryEn:'The Indiana OED public report records a March 2025 opening and a 20,000 tons/year cell-scrap nameplate capacity, not actual throughput. An IDEM notice filed under March 2026 identifies the address, shredding/grinding/separation equipment and a permit revision application; it does not establish final approval or current utilization. Feedstock specifications, LFP acceptance, external black-mass sales and purchasing volumes require direct confirmation.',
+    evidenceSources:[
+      {
+        titleKo:'Indiana OED · 배터리 에너지저장 보고서 p.42 (PDF 페이지)',
+        titleEn:'Indiana OED · Battery energy storage report, PDF p.42',
+        date:'2025-06 (보고서 표지 / report cover)',
+        url:'https://www.in.gov/oed/files/Indiana-Utility-Scale-Battery-Energy-Storage-Study-July-2025.pdf'
+      },
+      {
+        titleKo:'IDEM · FESOP 변경 신청 공고 · 주소 및 전처리 설비',
+        titleEn:'IDEM · FESOP revision application notice; address and equipment',
+        date:'2026-03 (공고 파일명 / notice filename)',
+        url:'https://www.in.gov/idem/files/notice_20260308_air_49821pn-js.pdf'
+      }
+    ]
+  },
+
+  /* 성일하이텍 조지아: 가동 공장이 아닌 철회된 투자계획 */
+  {
+    group:'SpokeHub',
+    category:'Spoke',
+    name:'성일하이텍 조지아 · 투자계획 철회',
+    nameEn:'SungEel HiTech · Georgia project withdrawn',
+    status:'Cancelled',
+    state:'GA',
+    city:'Toccoa / Stephens County',
+    lat:34.5773,
+    lng:-83.3324,
+    capa:'해당 없음 — 철회된 계획 / N/A — withdrawn project',
+    chem:'계획상 리튬이온 배터리 재활용 / planned Li-ion recycling',
+    company:'SungEel HiTech 성일하이텍',
+    aliases:[
+      '성일','성일하이덱','성일하이택','성일 하이텍','선일하이텍',
+      'SungEel','Sung Eel','SungEel Recycling Park Georgia LLC',
+      '조지아','죠지아','Georgia','Toccoa','토코아'
+    ],
+    researchProfile:true,
+    verifiedOn:'2026-11-11',
+    address:'Hayestone Brady Business Park, Toccoa, Stephens County, Georgia (과거 예정 권역 / former proposed area)',
+    positionBasisKo:'핀은 Toccoa 시 단위 참고 좌표입니다. 가동 공장·건설 현장 또는 확정 필지 위치가 아닙니다.',
+    positionBasisEn:'The pin is a city-level Toccoa reference, not an operating plant, construction site or verified parcel.',
+    statusLabelKo:'2025-04-17 철회 보도 · 가동 공장 아님',
+    statusLabelEn:'Withdrawal reported 2025-04-17 · not an operating plant',
+    processKo:'과거 전처리·재활용 투자계획 (철회). 가동능력·확보 가능 원료량에 포함하지 않음.',
+    processEn:'Former preprocessing / recycling investment plan (withdrawn). Excluded from operating capacity and radius sourcing calculations.',
+    summaryKo:'2022년 조지아 주지사 발표는 Toccoa의 Hayestone Brady Business Park에 설립할 계획을 소개했습니다. 2025-04-17 지역 보도는 Stephens County Development Authority가 해당 투자계획의 추진 중단을 발표했다고 전합니다. 인디애나주 공개 보고서도 조지아 계획 취소를 기재합니다. 미국 법인의 존속과 공장 투자계획 실행 여부는 별개의 사항입니다.',
+    summaryEn:'The 2022 Georgia governor announcement described a proposed facility at Hayestone Brady Business Park in Toccoa. A 2025-04-17 local report attributes withdrawal of the project to the Stephens County Development Authority. The Indiana OED public report also records cancellation of the Georgia plan. Legal-entity existence does not establish construction or operation.',
+    evidenceSources:[
+      {
+        titleKo:'Georgia 주지사실 · 최초 투자계획 (현재 가동 증거 아님)',
+        titleEn:'Georgia governor · original announcement (not evidence of operation)',
+        date:'2022-08-18',
+        url:'https://gov.georgia.gov/press-releases/2022-08-18/gov-kemp-korean-lithium-ion-battery-recycler-sungeel-hitech-build-first'
+      },
+      {
+        titleKo:'WLHR/WNEG · 개발청 발표 인용, 사업 철회',
+        titleEn:'WLHR/WNEG · development-authority withdrawal announcement',
+        date:'2025-04-17',
+        url:'https://921wlhr.com/sungeel-pulls-plans-for-plant-in-stephens-county/'
+      },
+      {
+        titleKo:'Indiana OED · 조지아 계획 취소 기재 (PDF p.42)',
+        titleEn:'Indiana OED · Georgia cancellation recorded (PDF p.42)',
+        date:'2025-06 (보고서 표지 / report cover)',
+        url:'https://www.in.gov/oed/files/Indiana-Utility-Scale-Battery-Energy-Storage-Study-July-2025.pdf'
+      }
+    ]
   }
 ];
 
 const iraZones=[
-  {
-    state:'Texas (휴스턴 / 오스틴 권역)',
-    stateEn:'Texas (Houston/Austin)',
-    lat:30,
-    lng:-96.2,
-    color:'#2563eb'
-  },
-  {
-    state:'Georgia (배터리 벨트)',
-    stateEn:'Georgia (Battery Belt)',
-    lat:33.4,
-    lng:-83.2,
-    color:'#16a34a'
-  },
-  {
-    state:'Kentucky & Tennessee',
-    stateEn:'Kentucky & Tennessee',
-    lat:36.4,
-    lng:-86.8,
-    color:'#7c3aed'
-  },
-  {
-    state:'Nevada (리노 / 스파크스 권역)',
-    stateEn:'Nevada (Reno/Sparks)',
-    lat:39.5,
-    lng:-119.5,
-    color:'#ea580c'
-  },
-  {
-    state:'Michigan (디트로이트 / 러스트벨트)',
-    stateEn:'Michigan (Rust Belt)',
-    lat:42.5,
-    lng:-84,
-    color:'#0891b2'
-  },
-  {
-    state:'Arizona (피닉스 / 퀸크릭 권역)',
-    stateEn:'Arizona (Phoenix)',
-    lat:33.3,
-    lng:-111.7,
-    color:'#ca8a04'
-  },
-  {
-    state:'Canada - Quebec & Ontario',
-    stateEn:'Canada - Quebec & Ontario',
-    lat:45.8,
-    lng:-74,
-    color:'#059669'
-  }
+  {state:'Texas (휴스턴 / 오스틴 권역)',stateEn:'Texas (Houston/Austin)',lat:30,lng:-96.2,color:'#2563eb'},
+  {state:'Georgia (배터리 벨트)',stateEn:'Georgia (Battery Belt)',lat:33.4,lng:-83.2,color:'#16a34a'},
+  {state:'Kentucky & Tennessee',stateEn:'Kentucky & Tennessee',lat:36.4,lng:-86.8,color:'#7c3aed'},
+  {state:'Nevada (리노 / 스파크스 권역)',stateEn:'Nevada (Reno/Sparks)',lat:39.5,lng:-119.5,color:'#ea580c'},
+  {state:'Michigan (디트로이트 / 러스트벨트)',stateEn:'Michigan (Rust Belt)',lat:42.5,lng:-84,color:'#0891b2'},
+  {state:'Arizona (피닉스 / 퀸크릭 권역)',stateEn:'Arizona (Phoenix)',lat:33.3,lng:-111.7,color:'#ca8a04'},
+  {state:'Canada - Quebec & Ontario',stateEn:'Canada - Quebec & Ontario',lat:45.8,lng:-74,color:'#059669'}
 ];
 
 const infraMeta={
@@ -1289,6 +1049,10 @@ const infraMeta={
   }
 };
 
+/* =========================================================
+   3. 지도 레이어와 저장 메모
+   ========================================================= */
+
 const markersLayer=L.layerGroup().addTo(map);
 const simCircleLayer=L.layerGroup().addTo(map);
 const routeLayer=L.layerGroup().addTo(map);
@@ -1298,20 +1062,14 @@ const iraLayerGroup=L.layerGroup();
 let isSimMode=false;
 let isDarkMode=false;
 let isIraActive=false;
-
 let currentCaptured300=[];
 let currentCaptured650=[];
 let lastRadiusOrigin=null;
-
 let currentActiveRoute=null;
 let currentActiveRail=null;
 let roadRequestSeq=0;
 let selectedRouteSeq=0;
-
-let lastRoadCosts={
-  katy:0,
-  torrance:0
-};
+let lastRoadCosts={katy:0,torrance:0};
 
 const storageKey='solion-map-v8-notes';
 let notes={};
@@ -1346,6 +1104,15 @@ function facilityName(facility){
 }
 
 function createCustomIcon(category,status){
+  if(status==='Cancelled'){
+    return L.divIcon({
+      className:'custom-div-icon',
+      html:'<div style="width:22px;height:22px;background:#64748b;color:white;border:2px solid white;border-radius:4px;text-align:center;font-weight:800;line-height:18px">×</div>',
+      iconSize:[22,22],
+      iconAnchor:[11,11]
+    });
+  }
+
   const colors={
     Cell:'#ef4444',
     Material:'#eab308',
@@ -1358,19 +1125,11 @@ function createCustomIcon(category,status){
   };
 
   if(['Residence','Office','Warehouse'].includes(category)){
-    const symbols={
-      Residence:'⌂',
-      Office:'▤',
-      Warehouse:'▰'
-    };
+    const symbols={Residence:'⌂',Office:'▤',Warehouse:'▰'};
 
     return L.divIcon({
       className:'custom-div-icon',
-      html:`
-        <div class="infra-pin" style="background:${colors[category]}">
-          ${symbols[category]}
-        </div>
-      `,
+      html:`<div class="infra-pin" style="background:${colors[category]}">${symbols[category]}</div>`,
       iconSize:[30,30],
       iconAnchor:[15,15],
       popupAnchor:[0,-14]
@@ -1378,15 +1137,12 @@ function createCustomIcon(category,status){
   }
 
   let shape='border-radius:3px;';
-
   if(['Cell','Spoke'].includes(category)){
     shape='border-radius:50%;';
   }
-
   if(category==='Material'){
     shape='transform:rotate(45deg);border-radius:2px;';
   }
-
   if(category==='Port'){
     shape='clip-path:polygon(50% 0%,0% 100%,100% 100%);';
   }
@@ -1397,16 +1153,7 @@ function createCustomIcon(category,status){
 
   return L.divIcon({
     className:'custom-div-icon',
-    html:`
-      <div style="
-        width:16px;
-        height:16px;
-        background:${colors[category]||'#64748b'};
-        ${shape}
-        border:${border};
-        box-shadow:0 2px 5px #0006
-      "></div>
-    `,
+    html:`<div style="width:16px;height:16px;background:${colors[category]||'#64748b'};${shape}border:${border};box-shadow:0 2px 5px #0006"></div>`,
     iconSize:[20,20],
     iconAnchor:[10,10]
   });
@@ -1416,12 +1163,9 @@ function getDistanceKm(lat1,lon1,lat2,lon2){
   const rad=Math.PI/180;
   const dLat=(lat2-lat1)*rad;
   const dLon=(lon2-lon1)*rad;
-
   const a=
     Math.sin(dLat/2)**2+
-    Math.cos(lat1*rad)*
-    Math.cos(lat2*rad)*
-    Math.sin(dLon/2)**2;
+    Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
 
   return 6371*2*Math.atan2(
     Math.sqrt(a),
@@ -1429,43 +1173,113 @@ function getDistanceKm(lat1,lon1,lat2,lon2){
   );
 }
 
+/* =========================================================
+   4. 회사 검색과 분류 필터
+   ========================================================= */
+
+let companySearchTimer=null;
+
+function normalizeCompanySearch(value){
+  return String(value??'')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu,'');
+}
+
+function companyMatches(facility,query){
+  const haystack=normalizeCompanySearch([
+    facility.name,
+    facility.nameEn,
+    facility.company,
+    facility.city,
+    facility.state,
+    facility.address,
+    ...(facility.aliases||[]),
+    notes[facility.id]?.role
+  ].join(' '));
+
+  return String(query)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every(token=>haystack.includes(normalizeCompanySearch(token)));
+}
+
+function runCompanySearch(value,origin='top',immediate=false){
+  clearTimeout(companySearchTimer);
+
+  const query=String(value);
+  $('search').value=query;
+  $('globalSearch').value=query;
+
+  if(query.trim()){
+    $('cat').value='';
+    $('statusFilter').value='';
+
+    [
+      'chkCellMat',
+      'chkSpokeHub',
+      'chkCorpInfra',
+      'showHome'
+    ].forEach(id=>$(id).checked=true);
+  }
+
+  applyFilters();
+
+  if(query.trim()){
+    if(immediate){
+      fitVisibleFacilities();
+    }else{
+      companySearchTimer=setTimeout(()=>fitVisibleFacilities(),300);
+    }
+  }
+}
+
+function handleSearchKey(event){
+  if(event.isComposing) return;
+
+  if(event.key==='Enter'){
+    event.preventDefault();
+    clearTimeout(companySearchTimer);
+    fitVisibleFacilities();
+  }
+
+  if(event.key==='Escape'){
+    event.preventDefault();
+    runCompanySearch('','top');
+  }
+}
+
+function updateGlobalSearchCount(){
+  if(!$('globalSearch')) return;
+
+  $('globalSearch').value=$('search').value;
+  const count=visibleFacilities().length;
+
+  $('globalSearchCount').textContent=$('search').value.trim()
+    ?text('검색 결과 '+count+'건','Results: '+count)
+    :text('전체 '+count+'건','Showing '+count);
+}
+
 function categoryGroup(category){
-  if(['Cell','Material'].includes(category)){
-    return 'chkCellMat';
-  }
-
-  if(['Spoke','Hub'].includes(category)){
-    return 'chkSpokeHub';
-  }
-
+  if(['Cell','Material'].includes(category)) return 'chkCellMat';
+  if(['Spoke','Hub'].includes(category)) return 'chkSpokeHub';
   return 'chkCorpInfra';
 }
 
 function visibleFacilities(){
-  const query=$('search').value.toLowerCase();
+  const query=$('search').value;
 
   return facilities.filter(facility=>{
-    if(
-      facility.group==='CellMat'&&
-      !$('chkCellMat').checked
-    ){
+    if(facility.group==='CellMat'&&!$('chkCellMat').checked){
       return false;
     }
-
-    if(
-      facility.group==='SpokeHub'&&
-      !$('chkSpokeHub').checked
-    ){
+    if(facility.group==='SpokeHub'&&!$('chkSpokeHub').checked){
       return false;
     }
-
-    if(
-      facility.group==='CorpInfra'&&
-      !$('chkCorpInfra').checked
-    ){
+    if(facility.group==='CorpInfra'&&!$('chkCorpInfra').checked){
       return false;
     }
-
     if(
       facility.category==='Residence'&&
       !$('showHome').checked&&
@@ -1473,35 +1287,17 @@ function visibleFacilities(){
     ){
       return false;
     }
-
-    if(
-      $('cat').value&&
-      facility.category!==$('cat').value
-    ){
+    if($('cat').value&&facility.category!==$('cat').value){
+      return false;
+    }
+    if($('statusFilter').value&&facility.status!==$('statusFilter').value){
+      return false;
+    }
+    if($('excludeLfp').checked&&/^LFP$/i.test(facility.chem.trim())){
       return false;
     }
 
-    if(
-      $('statusFilter').value&&
-      facility.status!==$('statusFilter').value
-    ){
-      return false;
-    }
-
-    if(
-      $('excludeLfp').checked&&
-      /^LFP$/i.test(facility.chem.trim())
-    ){
-      return false;
-    }
-
-    return [
-      facility.name,
-      facility.nameEn,
-      facility.city,
-      facility.state,
-      notes[facility.id]?.role
-    ].join(' ').toLowerCase().includes(query);
+    return companyMatches(facility,query);
   });
 }
 
@@ -1509,7 +1305,6 @@ function toggleResidenceVisibility(){
   if(!$('showHome').checked&&$('cat').value==='Residence'){
     $('cat').value='';
   }
-
   applyFilters();
 }
 
@@ -1519,11 +1314,9 @@ function changeCategory(){
   if(category){
     $(categoryGroup(category)).checked=true;
   }
-
   if(category==='Residence'){
     $('showHome').checked=true;
   }
-
   if(
     ['Residence','Office','Warehouse'].includes(category)&&
     ['Operating','Construction'].includes($('statusFilter').value)
@@ -1540,10 +1333,7 @@ function changeCategory(){
 
 function fitVisibleFacilities(){
   const visible=visibleFacilities();
-
-  if(!visible.length){
-    return;
-  }
+  if(!visible.length) return;
 
   if(visible.length===1){
     map.setView([visible[0].lat,visible[0].lng],10);
@@ -1551,15 +1341,9 @@ function fitVisibleFacilities(){
   }
 
   map.fitBounds(
-    L.latLngBounds(visible.map(facility=>[
-      facility.lat,
-      facility.lng
-    ])),
+    L.latLngBounds(visible.map(facility=>[facility.lat,facility.lng])),
     {
-      paddingTopLeft:[
-        Math.min(370,window.innerWidth*.4),
-        110
-      ],
+      paddingTopLeft:[Math.min(370,window.innerWidth*.4),110],
       paddingBottomRight:[40,40],
       maxZoom:11
     }
@@ -1600,6 +1384,7 @@ function jumpToInfra(id){
 }
 
 function clearMapFilters(){
+  clearTimeout(companySearchTimer);
   $('search').value='';
   $('cat').value='';
   $('statusFilter').value='';
@@ -1609,16 +1394,17 @@ function clearMapFilters(){
     'chkSpokeHub',
     'chkCorpInfra',
     'showHome'
-  ].forEach(id=>{
-    $(id).checked=true;
-  });
+  ].forEach(id=>$(id).checked=true);
 
   applyFilters();
 }
 
+/* =========================================================
+   5. 시설 팝업과 부동산 링크
+   ========================================================= */
+
 function propertyLinksHtml(facility){
   const propertyUrl=safeUrl(facility.linkUrl);
-
   const primaryLabel=facility.category==='Residence'
     ?text('🏡 Redfin 임대 매물 보기','🏡 Redfin rental listings')
     :text('🏢 LoopNet 오피스 임대 매물 보기','🏢 LoopNet office lease listings');
@@ -1626,8 +1412,7 @@ function propertyLinksHtml(facility){
   const mapUrl=
     'https://www.google.com/maps/search/?api=1&query='+
     encodeURIComponent(
-      facility.areaSearch||
-      facility.city+' '+facility.state
+      facility.areaSearch||facility.city+' '+facility.state
     );
 
   return `
@@ -1637,26 +1422,14 @@ function propertyLinksHtml(facility){
         'Area search links. Verify current availability, pricing and lease terms on the destination website.'
       )}
     </div>
-
     ${
       propertyUrl
-        ?`
-          <a
-            class="property-link"
-            href="${esc(propertyUrl)}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >${primaryLabel} ↗</a>
-        `
+        ?`<a class="property-link" href="${esc(propertyUrl)}" target="_blank" rel="noopener noreferrer">${primaryLabel} ↗</a>`
         :''
     }
-
-    <a
-      class="property-link secondary"
-      href="${esc(mapUrl)}"
-      target="_blank"
-      rel="noopener noreferrer"
-    >${text('🗺️ 후보 지역 지도 보기','🗺️ View candidate area map')} ↗</a>
+    <a class="property-link secondary" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">
+      ${text('🗺️ 후보 지역 지도 보기','🗺️ View candidate area map')} ↗
+    </a>
   `;
 }
 
@@ -1677,19 +1450,86 @@ function editInfraInfo(id){
   $('editDetails').open=true;
 }
 
+function researchFacilityPopup(facility){
+  const note=notes[facility.id]||{};
+  const label=currentLang==='ko'
+    ?facility.statusLabelKo
+    :facility.statusLabelEn;
+  const summary=currentLang==='ko'
+    ?facility.summaryKo
+    :facility.summaryEn;
+  const process=currentLang==='ko'
+    ?facility.processKo
+    :facility.processEn;
+  const position=currentLang==='ko'
+    ?facility.positionBasisKo
+    :facility.positionBasisEn;
+
+  const mapUrl=
+    'https://www.google.com/maps/search/?api=1&query='+
+    encodeURIComponent(facility.address);
+
+  const sources=(facility.evidenceSources||[]).map(source=>`
+    <li>
+      <a href="${esc(safeUrl(source.url))}" target="_blank" rel="noopener noreferrer">
+        ${esc(currentLang==='ko'?source.titleKo:source.titleEn)}
+      </a><br>
+      <span class="muted">${esc(source.date)}</span>
+    </li>
+  `).join('');
+
+  return `
+    <div style="min-width:270px;max-width:345px;font-size:12px;line-height:1.6">
+      <b>${esc(facilityName(facility))}</b><br>
+      ${esc(facility.city)}, ${esc(facility.state)} · ${esc(facility.category)}
+
+      <div class="notice">${esc(label)}</div>
+
+      <b>${text('주소 / 예정 권역:','Address / former proposed area:')}</b>
+      ${esc(facility.address)}<br>
+
+      <div class="muted">${esc(position)}</div>
+
+      <a class="property-link secondary" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">
+        ${text('주소 지도에서 확인 ↗','View address on map ↗')}
+      </a>
+
+      <b>${text('능력:','Capacity:')}</b> ${esc(facility.capa)}<br>
+      <b>${text('공정:','Process:')}</b> ${esc(process)}<br>
+      <p>${esc(summary)}</p>
+
+      <div class="muted">
+        ${text('자료 확인일:','Evidence checked:')}
+        ${esc(facility.verifiedOn)}
+        · ${text('외부 거래가능량 미확인','External available volume unverified')}
+      </div>
+
+      <div class="facility-evidence">
+        <b>${text('자료 출처 · 발표/자료 시점','Sources · publication/document dates')}</b>
+        <ul style="padding-left:18px">${sources}</ul>
+      </div>
+
+      ${note.memo?`<div data-user-note>${esc(note.memo)}</div>`:''}
+      ${popupActions(facility)}
+    </div>
+  `;
+}
+
 function getPopupContent(facility){
+  if(facility.researchProfile){
+    return researchFacilityPopup(facility);
+  }
+
   const note=notes[facility.id]||{};
   const sourceUrl=safeUrl(note.source);
 
   const header=`
     <b style="font-size:14px">${esc(facilityName(facility))}</b><br>
-    ${esc(facility.city)}, ${esc(facility.state)}
-    · ${esc(facility.category)}
+    ${esc(facility.city)}, ${esc(facility.state)} · ${esc(facility.category)}
   `;
 
   if(['Residence','Office'].includes(facility.category)){
     const isHome=facility.category==='Residence';
-
     const areaLabel=currentLang==='ko'
       ?facility.areaLabel
       :facility.areaLabelEn;
@@ -1697,7 +1537,6 @@ function getPopupContent(facility){
     return `
       <div style="min-width:265px;max-width:330px;font-size:12px;line-height:1.6">
         ${header}
-
         <div class="notice">
           ${
             isHome
@@ -1712,9 +1551,7 @@ function getPopupContent(facility){
           }
         </div>
 
-        <b>${text('검토 권역:','Review area:')}</b>
-        ${esc(areaLabel)}<br>
-
+        <b>${text('검토 권역:','Review area:')}</b> ${esc(areaLabel)}<br>
         <b>${text('검토 용도:','Intended use:')}</b>
         ${
           isHome
@@ -1740,29 +1577,17 @@ function getPopupContent(facility){
         <div>
           <b>${text('확인 상태:','Verification status:')}</b>
           ${esc(localizedValue(note.status||'후보'))}<br>
-
           <b>${text('확인일:','Verified on:')}</b>
           ${esc(note.date||text('미등록','Not recorded'))}
         </div>
 
         ${
           sourceUrl
-            ?`
-              <a
-                href="${esc(sourceUrl)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >${text('확인 근거','Verification source')}</a><br>
-            `
+            ?`<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${text('확인 근거','Verification source')}</a><br>`
             :''
         }
 
-        ${
-          note.memo
-            ?`<div data-user-note>${esc(note.memo)}</div>`
-            :''
-        }
-
+        ${note.memo?`<div data-user-note>${esc(note.memo)}</div>`:''}
         ${popupActions(facility)}
       </div>
     `;
@@ -1799,22 +1624,11 @@ function getPopupContent(facility){
 
         ${
           sourceUrl
-            ?`
-              <a
-                href="${esc(sourceUrl)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >${text('확인 근거','Verification source')}</a><br>
-            `
+            ?`<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${text('확인 근거','Verification source')}</a><br>`
             :''
         }
 
-        ${
-          note.memo
-            ?`<div data-user-note>${esc(note.memo)}</div>`
-            :''
-        }
-
+        ${note.memo?`<div data-user-note>${esc(note.memo)}</div>`:''}
         ${popupActions(facility)}
       </div>
     `;
@@ -1843,10 +1657,7 @@ function getPopupContent(facility){
 
       ${text('원본 능력:','Source capacity:')}
       ${esc(localizedValue(facility.capa))}
-      (${text(
-        '기준·실제 처리량 미확인',
-        'Basis and actual throughput unverified'
-      )})<br>
+      (${text('기준·실제 처리량 미확인','Basis and actual throughput unverified')})<br>
 
       ${text('원본 화학/공정 표기:','Source chemistry/process:')}
       ${esc(localizedValue(facility.chem))}<br>
@@ -1872,13 +1683,7 @@ function getPopupContent(facility){
 
       ${
         sourceUrl
-          ?`
-            <a
-              href="${esc(sourceUrl)}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >${text('확인 근거','Verification source')}</a>
-          `
+          ?`<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${text('확인 근거','Verification source')}</a>`
           :text('근거: 미등록','Source: not recorded')
       }<br>
 
@@ -1896,6 +1701,10 @@ function getPopupContent(facility){
   `;
 }
 
+/* =========================================================
+   6. 마커·검색 결과·목록 렌더링
+   ========================================================= */
+
 function renderMarkers(){
   markersLayer.clearLayers();
 
@@ -1912,14 +1721,13 @@ function renderMarkers(){
           facility.status
         )
       }
-    ).bindPopup(
-      getPopupContent(facility)
-    ).addTo(markersLayer);
+    ).bindPopup(getPopupContent(facility)).addTo(markersLayer);
   });
 }
 
 function applyFilters(){
   renderMarkers();
+  updateGlobalSearchCount();
 
   const visible=visibleFacilities();
   const actualCount=visible.filter(facility=>!facility.candidate).length;
@@ -1943,6 +1751,11 @@ function applyFilters(){
   $('facilityList').innerHTML=visible.map(facility=>`
     <button onclick="openFacility('${facility.id}')">
       ${esc(facilityName(facility))}<br>
+      ${
+        facility.researchProfile
+          ?`<span class="status-tag ${facility.status==='Cancelled'?'cancelled':''}">${esc(currentLang==='ko'?facility.statusLabelKo:facility.statusLabelEn)}</span><br>`
+          :''
+      }
       <span class="muted">
         ${esc(facility.state)}
         · ${esc(facility.category)}
@@ -1956,16 +1769,11 @@ function applyFilters(){
         'No items match the current search, status or layer filters.'
       )}
       <br>
-      <button onclick="clearMapFilters()">
-        ${text('필터 초기화','Reset filters')}
-      </button>
+      <button onclick="clearMapFilters()">${text('필터 초기화','Reset filters')}</button>
     </div>
   `;
 
-  if(
-    lastRadiusOrigin&&
-    $('analysisPanel').style.display==='block'
-  ){
+  if(lastRadiusOrigin&&$('analysisPanel').style.display==='block'){
     captureRadiusFacilities();
     updateLogisticsCost();
     renderCapturedList();
@@ -1975,19 +1783,20 @@ function applyFilters(){
 function openFacility(id){
   const facility=facilities.find(item=>item.id===id);
   if(!facility) return;
-
   map.setView([facility.lat,facility.lng],10);
   facility._leafletMarker?.openPopup();
 }
+
+/* =========================================================
+   7. 반경 탐색과 물류비 시나리오
+   ========================================================= */
 
 function captureRadiusFacilities(){
   if(!lastRadiusOrigin) return;
 
   const nearby=visibleFacilities()
-    .filter(facility=>![
-      'Residence',
-      'Office'
-    ].includes(facility.category))
+    .filter(facility=>facility.status!=='Cancelled')
+    .filter(facility=>!['Residence','Office'].includes(facility.category))
     .map(facility=>({
       ...facility,
       dist:getDistanceKm(
@@ -2001,9 +1810,7 @@ function captureRadiusFacilities(){
     .sort((a,b)=>a.dist-b.dist);
 
   currentCaptured300=nearby.filter(facility=>facility.dist<=300);
-  currentCaptured650=nearby.filter(facility=>
-    facility.dist>300&&facility.dist<=650
-  );
+  currentCaptured650=nearby.filter(facility=>facility.dist>300&&facility.dist<=650);
 }
 
 function runRadiusAnalysis(lat,lng,title){
@@ -2040,7 +1847,6 @@ function runRadiusAnalysis(lat,lng,title){
     text(' · 현재 필터 기준',' · Based on current filters');
 
   $('analysisPanel').style.display='block';
-
   updateLogisticsCost();
   renderCapturedList();
 }
@@ -2093,16 +1899,11 @@ function updateLogisticsCost(){
     );
 
     const assumedRoadDistance=weighted.reduce(
-      (sum,facility)=>
-        sum+
-        facility.dist*Number(notes[facility.id].volume),
+      (sum,facility)=>sum+facility.dist*Number(notes[facility.id].volume),
       0
     )/totalVolume*1.2;
 
-    const costPerTon=
-      assumedRoadDistance*
-      rate*
-      hazmatFactor;
+    const costPerTon=assumedRoadDistance*rate*hazmatFactor;
 
     return `
       <div>
@@ -2157,12 +1958,7 @@ function toggleSimMode(){
 
 map.on('click',event=>{
   if(!isSimMode) return;
-
-  runRadiusAnalysis(
-    event.latlng.lat,
-    event.latlng.lng,
-    '신규 후보지'
-  );
+  runRadiusAnalysis(event.latlng.lat,event.latlng.lng,'신규 후보지');
 });
 
 function closePanel(){
@@ -2173,7 +1969,6 @@ function closePanel(){
 
 function toggleDarkMode(){
   isDarkMode=!isDarkMode;
-
   $('map').classList.toggle('dark-mode-map',isDarkMode);
   document.body.classList.toggle('night',isDarkMode);
 
@@ -2183,24 +1978,24 @@ function toggleDarkMode(){
 }
 
 function resetMap(){
+  clearTimeout(companySearchTimer);
   closePanel();
   routeLayer.clearLayers();
   railLayer.clearLayers();
 
   currentActiveRoute=null;
   currentActiveRail=null;
-
-  lastRoadCosts={
-    katy:0,
-    torrance:0
-  };
-
+  lastRoadCosts={katy:0,torrance:0};
   roadRequestSeq++;
   selectedRouteSeq++;
 
   clearMapFilters();
   map.setView([35,-96],4);
 }
+
+/* =========================================================
+   8. 도로·철도 경로
+   ========================================================= */
 
 async function loadNavigationRoute(target){
   if(currentActiveRoute===target){
@@ -2212,7 +2007,6 @@ async function loadNavigationRoute(target){
 
   selectedRouteSeq++;
   const requestId=++roadRequestSeq;
-
   routeLayer.clearLayers();
   currentActiveRoute=target;
 
@@ -2220,9 +2014,7 @@ async function loadNavigationRoute(target){
     ?'-84.3880,33.7490;-86.8025,33.5207;-90.1848,32.2988;-91.1871,30.4518;-95.3698,29.7604;-95.6300,29.7700'
     :'-84.3880,33.7490;-88.0399,30.6954;-95.3698,29.7604;-98.4936,29.4241;-106.4111,31.8457;-110.9747,32.2226;-112.0740,33.4484;-118.2437,34.0522;-118.3406,33.8358';
 
-  const color=target==='katy'
-    ?'#d97706'
-    :'#2563eb';
+  const color=target==='katy'?'#d97706':'#2563eb';
 
   try{
     const response=await fetch(
@@ -2236,21 +2028,16 @@ async function loadNavigationRoute(target){
 
     const data=await response.json();
 
-    if(
-      requestId!==roadRequestSeq||
-      currentActiveRoute!==target
-    ){
+    if(requestId!==roadRequestSeq||currentActiveRoute!==target){
       return;
     }
 
     const route=data.routes?.[0];
-
     if(!route){
       throw new Error('No route');
     }
 
     const diesel=num('dieselPriceInput');
-
     if(!Number.isFinite(diesel)||diesel<0){
       throw new Error('Invalid diesel price');
     }
@@ -2262,11 +2049,7 @@ async function loadNavigationRoute(target){
     lastRoadCosts[target]=assumedCost;
 
     const line=L.geoJSON(route.geometry,{
-      style:{
-        color,
-        weight:5,
-        opacity:.9
-      }
+      style:{color,weight:5,opacity:.9}
     }).addTo(routeLayer);
 
     const routeName=target==='katy'
@@ -2276,7 +2059,6 @@ async function loadNavigationRoute(target){
     line.bindPopup(`
       <div style="min-width:280px;font-size:12px;line-height:1.6">
         <b>${routeName}</b>
-
         <div class="route-info-box">
           ${text(
             '일반 도로 참고 경로. 트럭·위험물 경로와 적재량은 미검증입니다.',
@@ -2314,17 +2096,11 @@ async function loadNavigationRoute(target){
       </div>
     `);
 
-    map.fitBounds(
-      line.getBounds(),
-      {padding:[60,60]}
-    );
-
+    map.fitBounds(line.getBounds(),{padding:[60,60]});
     line.openPopup();
   }catch(error){
     if(requestId!==roadRequestSeq) return;
-
     currentActiveRoute=null;
-
     alert(text(
       '도로 경로 조회에 실패했습니다. 인터넷·서비스 상태와 입력값을 확인하세요.',
       'Road lookup failed. Check connectivity, service status and inputs.'
@@ -2341,19 +2117,11 @@ function loadRailRoute(target){
   }
 
   currentActiveRail=target;
-
   const end=baseOffices[target];
 
   const line=L.polyline(
-    [
-      [33.749,-84.388],
-      [end.lat,end.lng]
-    ],
-    {
-      color:'#7c3aed',
-      dashArray:'8,8',
-      weight:3
-    }
+    [[33.749,-84.388],[end.lat,end.lng]],
+    {color:'#7c3aed',dashArray:'8,8',weight:3}
   ).addTo(railLayer);
 
   line.bindPopup(text(
@@ -2361,10 +2129,7 @@ function loadRailRoute(target){
     'Conceptual rail direction only. Actual alignment, operators, terminals and cargo acceptance are unverified. No distance, rate, transit time or savings are calculated. Offices are not rail delivery terminals.'
   )).openPopup();
 
-  map.fitBounds(
-    line.getBounds(),
-    {padding:[50,50]}
-  );
+  map.fitBounds(line.getBounds(),{padding:[50,50]});
 }
 
 function drawIncentiveLayer(){
@@ -2373,10 +2138,7 @@ function drawIncentiveLayer(){
   iraZones.forEach(zone=>{
     L.circleMarker(
       [zone.lat,zone.lng],
-      {
-        radius:10,
-        color:zone.color
-      }
+      {radius:10,color:zone.color}
     ).bindPopup(`
       <b>${esc(currentLang==='ko'?zone.state:zone.stateEn)}</b><br>
 
@@ -2422,6 +2184,10 @@ function toggleIraLayer(){
   drawIncentiveLayer();
 }
 
+/* =========================================================
+   9. 거래 가치·공헌이익 계산
+   ========================================================= */
+
 function onPriceInput(){
   renderMarkers();
   calcTrade();
@@ -2444,14 +2210,7 @@ const fields=[
 $('assayInputs').innerHTML=fields.map(([id,label,value])=>`
   <label>
     ${label}
-    <input
-      type="number"
-      id="${id}"
-      value="${value}"
-      min="0"
-      step="any"
-      oninput="calcTrade()"
-    >
+    <input type="number" id="${id}" value="${value}" min="0" step="any" oninput="calcTrade()">
   </label>
 `).join('');
 
@@ -2460,18 +2219,11 @@ function calcTrade(){
     .map(field=>field[0])
     .concat(['priceNi','priceCo','priceLi']);
 
-  const values=Object.fromEntries(
-    ids.map(id=>[id,num(id)])
-  );
+  const values=Object.fromEntries(ids.map(id=>[id,num(id)]));
 
   const invalid=
-    Object.values(values).some(value=>
-      !Number.isFinite(value)||value<0
-    )||
-    [
-      'ni','co','li',
-      'payNi','payCo','payLi'
-    ].some(id=>values[id]>100)||
+    Object.values(values).some(value=>!Number.isFinite(value)||value<0)||
+    ['ni','co','li','payNi','payCo','payLi'].some(id=>values[id]>100)||
     values.moisture>=100||
     values.ni+values.co+values.li>100;
 
@@ -2484,15 +2236,10 @@ function calcTrade(){
   }
 
   const dryFraction=1-values.moisture/100;
-
   const nickelValue=values.priceNi*values.ni/100;
   const cobaltValue=values.priceCo*values.co/100;
   const lithiumValue=values.priceLi*values.li/100*5.323;
-
-  const theoretical=
-    nickelValue+
-    cobaltValue+
-    lithiumValue;
+  const theoretical=nickelValue+cobaltValue+lithiumValue;
 
   const saleDry=
     nickelValue*values.payNi/100+
@@ -2501,11 +2248,7 @@ function calcTrade(){
     values.deduct;
 
   const saleWet=saleDry*dryFraction;
-
-  const margin=
-    saleWet-
-    values.buy-
-    values.variable;
+  const margin=saleWet-values.buy-values.variable;
 
   $('tradeResult').innerHTML=`
     ${text('함유금속 이론가치:','Theoretical contained-metal value:')}
@@ -2518,9 +2261,7 @@ function calcTrade(){
     ${money(saleWet)}/wmt<br>
 
     ${text('공헌이익:','Contribution margin:')}
-    <b style="color:${margin<0?'#dc2626':'#047857'}">
-      ${money(margin)}/wmt
-    </b><br>
+    <b style="color:${margin<0?'#dc2626':'#047857'}">${money(margin)}/wmt</b><br>
 
     ${text('월 공헌이익:','Monthly contribution margin:')}
     ${money(margin*values.monthly)}
@@ -2533,6 +2274,10 @@ function calcTrade(){
     </div>
   `;
 }
+
+/* =========================================================
+   10. 시설 메모와 거래 경로 견적
+   ========================================================= */
 
 const editFields=[
   ['editRole','role'],
@@ -2549,9 +2294,7 @@ function loadEdit(){
 
   editFields.forEach(([id,key])=>{
     $(id).value=note[key]??(
-      id==='editRole'||id==='editStatus'
-        ?'미확인'
-        :''
+      id==='editRole'||id==='editStatus'?'미확인':''
     );
   });
 
@@ -2559,10 +2302,7 @@ function loadEdit(){
 }
 
 function saveEdit(){
-  if(
-    $('editVolume').value!==''&&
-    !(num('editVolume')>=0)
-  ){
+  if($('editVolume').value!==''&&!(num('editVolume')>=0)){
     alert(text(
       '물량은 0 이상이어야 합니다.',
       'Volume must be zero or greater.'
@@ -2570,10 +2310,7 @@ function saveEdit(){
     return;
   }
 
-  if(
-    $('editSource').value&&
-    !safeUrl($('editSource').value)
-  ){
+  if($('editSource').value&&!safeUrl($('editSource').value)){
     alert(text(
       'http/https 근거 URL을 입력하세요.',
       'Enter an http/https source URL.'
@@ -2582,19 +2319,11 @@ function saveEdit(){
   }
 
   const note={};
-
-  editFields.forEach(([id,key])=>{
-    note[key]=$(id).value;
-  });
-
+  editFields.forEach(([id,key])=>note[key]=$(id).value);
   notes[$('editFacility').value]=note;
 
   try{
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify(notes)
-    );
-
+    localStorage.setItem(storageKey,JSON.stringify(notes));
     $('saveStatus').textContent=text(
       '브라우저에 저장됨',
       'Saved in this browser'
@@ -2610,17 +2339,11 @@ function saveEdit(){
 }
 
 function fillFacilitySelectors(){
-  [
-    'origin',
-    'destination',
-    'editFacility'
-  ].forEach(id=>{
+  ['origin','destination','editFacility'].forEach(id=>{
     const previous=$(id).value;
 
     $(id).innerHTML=facilities.map(facility=>`
-      <option value="${facility.id}">
-        ${esc(facilityName(facility))}
-      </option>
+      <option value="${facility.id}">${esc(facilityName(facility))}</option>
     `).join('');
 
     if(facilities.some(facility=>facility.id===previous)){
@@ -2630,19 +2353,10 @@ function fillFacilitySelectors(){
 }
 
 async function routeSelected(){
-  const origin=facilities.find(facility=>
-    facility.id===$('origin').value
-  );
+  const origin=facilities.find(facility=>facility.id===$('origin').value);
+  const destination=facilities.find(facility=>facility.id===$('destination').value);
 
-  const destination=facilities.find(facility=>
-    facility.id===$('destination').value
-  );
-
-  if(
-    !origin||
-    !destination||
-    origin.id===destination.id
-  ){
+  if(!origin||!destination||origin.id===destination.id){
     $('routeResult').textContent=text(
       '서로 다른 지점을 선택하세요.',
       'Choose different endpoints.'
@@ -2652,7 +2366,6 @@ async function routeSelected(){
 
   roadRequestSeq++;
   currentActiveRoute=null;
-
   const requestId=++selectedRouteSeq;
 
   $('routeResult').textContent=text(
@@ -2671,11 +2384,9 @@ async function routeSelected(){
     }
 
     const data=await response.json();
-
     if(requestId!==selectedRouteSeq) return;
 
     const route=data.routes?.[0];
-
     if(!route){
       throw new Error('No route');
     }
@@ -2683,24 +2394,14 @@ async function routeSelected(){
     routeLayer.clearLayers();
 
     const line=L.geoJSON(route.geometry,{
-      style:{
-        color:'#2563eb',
-        weight:4
-      }
+      style:{color:'#2563eb',weight:4}
     }).addTo(routeLayer);
 
-    map.fitBounds(
-      line.getBounds(),
-      {padding:[50,50]}
-    );
+    map.fitBounds(line.getBounds(),{padding:[50,50]});
 
     $('routeResult').textContent=
-      facilityName(origin)+
-      ' → '+
-      facilityName(destination)+
-      ': '+
-      (route.distance/1000).toFixed(0)+
-      ' km · '+
+      facilityName(origin)+' → '+facilityName(destination)+
+      ': '+(route.distance/1000).toFixed(0)+' km · '+
       text('순수 주행 ','Driving only ')+
       (route.duration/3600).toFixed(1)+
       text(
@@ -2726,12 +2427,7 @@ function quoteCost(){
   const handling=num('handling');
   const other=num('otherCost');
 
-  if(!(
-    payload>0&&
-    quote>=0&&
-    handling>=0&&
-    other>=0
-  )){
+  if(!(payload>0&&quote>=0&&handling>=0&&other>=0)){
     $('routeResult').textContent=text(
       '적재량과 운송사 견적·추가비용을 입력하세요.',
       'Enter payload, carrier quote and additional costs.'
@@ -2739,10 +2435,7 @@ function quoteCost(){
     return;
   }
 
-  const totalPerTon=
-    quote/payload+
-    handling+
-    other;
+  const totalPerTon=quote/payload+handling+other;
 
   $('routeResult').textContent=text(
     `견적 기준 ${money(totalPerTon)}/t (배차 ${money(quote)} ÷ ${payload}t + 포장·상하차 ${money(handling)}/t + 보관·기타 ${money(other)}/t). 견적 범위 밖 항목은 별도.`,
@@ -2750,19 +2443,17 @@ function quoteCost(){
   );
 }
 
-function download(name,content,type){
-  const url=URL.createObjectURL(
-    new Blob([content],{type})
-  );
+/* =========================================================
+   11. JSON 백업·CSV 내보내기
+   ========================================================= */
 
+function download(name,content,type){
+  const url=URL.createObjectURL(new Blob([content],{type}));
   const anchor=document.createElement('a');
   anchor.href=url;
   anchor.download=name;
   anchor.click();
-
-  setTimeout(()=>{
-    URL.revokeObjectURL(url);
-  },1000);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function exportData(asCsv){
@@ -2776,27 +2467,24 @@ function exportData(asCsv){
       },null,2),
       'application/json'
     );
-
     return;
   }
 
   const headers=currentLang==='ko'
     ?[
-      'ID','시설','주','도시','구분',
-      '원본상태','확인상태','역할','공정',
-      '월거래가능량t','확인일','출처','메모'
+      'ID','시설','주','도시','구분','원본상태','확인상태',
+      '역할','공정','월거래가능량t','확인일','출처','메모'
     ]
     :[
-      'ID','Facility','State','City','Category',
-      'SourceStatus','VerifiedStatus','Role','Process',
-      'MonthlyAvailableTonnes','VerifiedOn','Source','Notes'
+      'ID','Facility','State','City','Category','SourceStatus',
+      'VerifiedStatus','Role','Process','MonthlyAvailableTonnes',
+      'VerifiedOn','Source','Notes'
     ];
 
   const rows=[
     headers,
     ...visibleFacilities().map(facility=>{
       const note=notes[facility.id]||{};
-
       return [
         facility.id,
         facilityName(facility),
@@ -2817,19 +2505,15 @@ function exportData(asCsv){
 
   const csvCell=value=>{
     let content=String(value??'');
-
     if(/^\s*[=+@-]/.test(content)){
       content="'"+content;
     }
-
     return '"'+content.replace(/"/g,'""')+'"';
   };
 
   download(
     'SOLION_map_filtered.csv',
-    '\ufeff'+rows.map(row=>
-      row.map(csvCell).join(',')
-    ).join('\r\n'),
+    '\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n'),
     'text/csv;charset=utf-8'
   );
 }
@@ -2840,10 +2524,7 @@ async function importData(event){
     if(!file) return;
 
     if(file.size>2000000){
-      throw new Error(text(
-        '파일 크기 초과',
-        'File too large'
-      ));
+      throw new Error(text('파일 크기 초과','File too large'));
     }
 
     const data=JSON.parse(await file.text());
@@ -2854,53 +2535,31 @@ async function importData(event){
       typeof data.notes!=='object'||
       Array.isArray(data.notes)
     ){
-      throw new Error(text(
-        'v8 백업 형식 아님',
-        'Not a v8 backup'
-      ));
+      throw new Error(text('v8 백업 형식 아님','Not a v8 backup'));
     }
 
     const clean={};
-    const allowed=[
-      'role','process','status',
-      'volume','date','source','memo'
-    ];
+    const allowed=['role','process','status','volume','date','source','memo'];
 
     facilities.forEach(facility=>{
       const incoming=data.notes[facility.id];
 
-      if(
-        incoming&&
-        typeof incoming==='object'&&
-        !Array.isArray(incoming)
-      ){
+      if(incoming&&typeof incoming==='object'&&!Array.isArray(incoming)){
         clean[facility.id]={};
 
         allowed.forEach(key=>{
-          if(
-            typeof incoming[key]==='string'||
-            typeof incoming[key]==='number'
-          ){
-            clean[facility.id][key]=String(
-              incoming[key]
-            ).slice(0,10000);
+          if(typeof incoming[key]==='string'||typeof incoming[key]==='number'){
+            clean[facility.id][key]=String(incoming[key]).slice(0,10000);
           }
         });
       }
     });
 
-    notes={
-      ...notes,
-      ...clean
-    };
+    notes={...notes,...clean};
 
     let persisted=true;
-
     try{
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify(notes)
-      );
+      localStorage.setItem(storageKey,JSON.stringify(notes));
     }catch{
       persisted=false;
     }
@@ -2909,28 +2568,21 @@ async function importData(event){
     loadEdit();
 
     $('dataStatus').textContent=persisted
-      ?text(
-        '백업을 병합했습니다.',
-        'Backup merged.'
-      )
+      ?text('백업을 병합했습니다.','Backup merged.')
       :text(
         '메모리 반영됨. 브라우저 저장 불가: JSON 백업 필요',
         'Updated in memory. Browser storage unavailable: export JSON.'
       );
   }catch(error){
     $('dataStatus').textContent=
-      text('가져오기 실패: ','Import failed: ')+
-      error.message;
+      text('가져오기 실패: ','Import failed: ')+error.message;
   }finally{
     event.target.value='';
   }
 }
 
 $('dieselPriceInput').addEventListener('input',()=>{
-  lastRoadCosts={
-    katy:0,
-    torrance:0
-  };
+  lastRoadCosts={katy:0,torrance:0};
 
   if(currentActiveRoute){
     roadRequestSeq++;
@@ -2938,6 +2590,10 @@ $('dieselPriceInput').addEventListener('input',()=>{
     currentActiveRoute=null;
   }
 });
+
+/* =========================================================
+   12. 한글·영문 전환
+   ========================================================= */
 
 const valueTranslations={
   '미확인':'Unverified',
@@ -2990,90 +2646,60 @@ const valueTranslations={
 
 function localizedValue(value){
   const original=String(value??'');
-
-  if(currentLang==='ko'){
-    return original;
-  }
-
-  if(valueTranslations[original]){
-    return valueTranslations[original];
-  }
-
+  if(currentLang==='ko') return original;
+  if(valueTranslations[original]) return valueTranslations[original];
   return original.replace(/톤/g,'t');
 }
 
 const uiTranslations={
-  'SOLION 북미 거래·입지 맵':
-    'SOLION North America Trading & Location Map',
+  'SOLION 북미 거래·입지 맵':'SOLION North America Trading & Location Map',
+  '회사·지역 검색':'Company / region search',
+  '성일하이텍 / SungEel / 지역명':'SungEel / company / region',
+  '검색 지우기':'Clear search',
+  '최신 가동 미확인':'Current operation unverified',
+  '계획 철회 / 취소':'Withdrawn / cancelled',
+  '성일하이텍':'SungEel HiTech',
 
   '기존 자료를 이관한 작업용 지도입니다. 시설의 최신 가동·규격·물량·주소는 독립 검증하지 않았습니다. 마커는 ‘원본 기재·미검증’ 또는 ‘후보’입니다.':
     'Working map migrated from the original dataset. Current facility status, specifications, volumes and addresses have not been independently verified. Markers indicate unverified source records or candidate locations.',
 
-  '거래처 발굴 / 입지 검토':
-    'Counterparty sourcing / location review',
-
-  '1단계 · 유통·트레이딩':
-    'Stage 1 · Distribution & trading',
-
-  '2단계 · 생산시설 투자':
-    'Stage 2 · Processing facility investment',
-
-  '기업·도시·주 검색':
-    'Search company, city or state',
-
-  '원본 가동 기재':
-    'Operating in source',
-
-  '원본 건설 기재':
-    'Construction in source',
-
-  '후보 / 개념':
-    'Candidate / concept',
+  '거래처 발굴 / 입지 검토':'Counterparty sourcing / location review',
+  '1단계 · 유통·트레이딩':'Stage 1 · Distribution & trading',
+  '2단계 · 생산시설 투자':'Stage 2 · Processing facility investment',
+  '기업·도시·주 검색':'Search company, city or state',
+  '원본 가동 기재':'Operating in source',
+  '원본 건설 기재':'Construction in source',
+  '후보 / 개념':'Candidate / concept',
 
   'LFP 전용 제외 (혼합·불명은 확인대상 유지)':
     'Exclude LFP-only (retain mixed/unknown for review)',
 
-  '주거지 후보 표시':
-    'Show residential candidates',
-
-  '주거·오피스 바로보기':
-    'Homes & offices',
-
-  '주거 후보 2곳':
-    '2 residential candidates',
-
-  '오피스 후보 2곳':
-    '2 office candidates',
+  '주거지 후보 표시':'Show residential candidates',
+  '주거·오피스 바로보기':'Homes & offices',
+  '주거 후보 2곳':'2 residential candidates',
+  '오피스 후보 2곳':'2 office candidates',
 
   '보라색 집 = 주거 · 남색 빌딩 = 오피스 · 청록색 창고 = 물류 후보. 모든 핀은 대략적인 검토 권역입니다.':
     'Purple house = residence · navy building = office · cyan warehouse = logistics candidate. All pins mark approximate review areas.',
 
-  '시설 목록 · 클릭해 상세 확인':
-    'Facilities · click for details',
-
-  '거래 원료 가치·공헌이익 계산':
-    'Feedstock value & contribution margin',
+  '시설 목록 · 클릭해 상세 확인':'Facilities · click for details',
+  '거래 원료 가치·공헌이익 계산':'Feedstock value & contribution margin',
 
   '시설 능력과 별개인 거래 시나리오입니다. 가격은 상단의 수동 가정값(시세 연동 없음). Li는 탄산리튬 기준이며 Li 원소함량에 5.323을 곱해 환산합니다.':
     'Independent transaction scenario. Prices above are manual assumptions, not live quotes. Li uses lithium carbonate pricing, with elemental Li content multiplied by 5.323.',
 
-  '실제 거래 경로·운송비 비교':
-    'Transaction routes & freight comparison',
+  '실제 거래 경로·운송비 비교':'Transaction routes & freight comparison',
 
   '사무실을 화물 경유지로 가정하지 않습니다. 출발·도착 창고/시설을 선택하세요. 도로 API는 일반 차량 경로 참고이며 위험물·대형트럭 운행 검증이 아닙니다.':
     'Select actual origin and destination facilities or warehouses. Offices are not assumed to be cargo waypoints. Road API results are general driving references, not validated hazmat or truck routes.',
 
-  '시설 메모·확인정보 편집':
-    'Edit facility notes & verification',
+  '시설 메모·확인정보 편집':'Edit facility notes & verification',
 
   '선택 시설의 실사·영업 확인 내용을 기록합니다. 브라우저 저장은 이 파일·브라우저 환경에 한정됩니다. JSON 내보내기로 백업하세요.':
     'Record due diligence and commercial confirmations. Browser storage is limited to this file/browser environment. Export JSON for backup.',
 
-  '자료 내보내기·가져오기':
-    'Export & import data',
-
-  '정책·자료 기준과 사용법':
-    'Policy, data basis & instructions',
+  '자료 내보내기·가져오기':'Export & import data',
+  '정책·자료 기준과 사용법':'Policy, data basis & instructions',
 
   '① 시설 클릭 → 원본과 확인정보 구분 ② 거래처 메모에 검증 결과 기록 ③ 실제 원료 분석표로 가격 계산 ④ 실제 시설·창고 간 경로와 운송사 견적 비교.':
     '1. Open a facility and distinguish source records from verified notes. 2. Record findings. 3. Calculate values using actual assays. 4. Compare actual facility routes and carrier quotes.',
@@ -3084,65 +2710,26 @@ const uiTranslations={
   '수출 거래는 BIS 예외·승인 적용 여부와 폐기물·운송 규제를 개별 확인하세요. 이 지도는 수출 가능 여부나 지원금 수급 자격을 판정하지 않습니다.':
     'Check applicable BIS authorizations/exceptions and waste/transport rules for each export transaction. This map does not determine export eligibility or incentive qualification.',
 
-  'Ni 함량 %':
-    'Ni assay %',
-
-  'Co 함량 %':
-    'Co assay %',
-
-  'Li 원소 함량 %':
-    'Elemental Li assay %',
-
-  '수분 %':
-    'Moisture %',
-
-  'Ni 매출 지급률 %':
-    'Ni sales payable %',
-
-  'Co 매출 지급률 %':
-    'Co sales payable %',
-
-  'Li 매출 지급률 %':
-    'Li sales payable %',
-
-  '처리·불순물 공제 $/건톤':
-    'Treatment/impurity deduction $/dmt',
-
-  '매입 $/습톤':
-    'Purchase $/wmt',
-
-  '물류·검사·금융 $/습톤':
-    'Freight/assay/finance $/wmt',
-
-  '월 거래량 습톤':
-    'Monthly volume wmt',
-
-  '실적재량 t':
-    'Net payload t',
-
-  '배차 견적 USD/대':
-    'Carrier quote USD/load',
-
-  '운송사 확인값':
-    'Carrier-confirmed amount',
-
-  '포장·상하차 USD/t':
-    'Packing/handling USD/t',
-
-  '보관·기타 USD/t':
-    'Storage/other USD/t',
-
-  '선택 구간 도로 조회':
-    'Look up selected road route',
-
-  '견적 기준 비용 계산':
-    'Calculate quoted cost',
-
-  '출발·도착과 견적을 입력하세요.':
-    'Select endpoints and enter a quote.',
-
-  '공정 (복수는 쉼표 구분)':
-    'Process (comma-separated)',
+  'Ni 함량 %':'Ni assay %',
+  'Co 함량 %':'Co assay %',
+  'Li 원소 함량 %':'Elemental Li assay %',
+  '수분 %':'Moisture %',
+  'Ni 매출 지급률 %':'Ni sales payable %',
+  'Co 매출 지급률 %':'Co sales payable %',
+  'Li 매출 지급률 %':'Li sales payable %',
+  '처리·불순물 공제 $/건톤':'Treatment/impurity deduction $/dmt',
+  '매입 $/습톤':'Purchase $/wmt',
+  '물류·검사·금융 $/습톤':'Freight/assay/finance $/wmt',
+  '월 거래량 습톤':'Monthly volume wmt',
+  '실적재량 t':'Net payload t',
+  '배차 견적 USD/대':'Carrier quote USD/load',
+  '운송사 확인값':'Carrier-confirmed amount',
+  '포장·상하차 USD/t':'Packing/handling USD/t',
+  '보관·기타 USD/t':'Storage/other USD/t',
+  '선택 구간 도로 조회':'Look up selected road route',
+  '견적 기준 비용 계산':'Calculate quoted cost',
+  '출발·도착과 견적을 입력하세요.':'Select endpoints and enter a quote.',
+  '공정 (복수는 쉼표 구분)':'Process (comma-separated)',
 
   '전처리, 습식, 건식, 전기화학, 직접재생':
     'Preprocessing, hydrometallurgy, pyrometallurgy, electrochemical, direct recycling',
@@ -3150,153 +2737,58 @@ const uiTranslations={
   '월 외부 거래가능량 t (불명은 공란)':
     'External volume t/month (blank if unknown)',
 
-  '담당자·규격·계약·인허가 메모':
-    'Contact / specs / contracts / permits',
-
-  '거래 역할':
-    'Trading role',
-
-  '확인 상태':
-    'Verification status',
-
-  '확인일':
-    'Verified on',
-
-  '근거 URL':
-    'Source URL',
-
-  '메모 저장':
-    'Save notes',
-
-  'JSON 백업 복원':
-    'Restore JSON backup',
-
-  'JSON 백업':
-    'JSON backup',
-
-  '현재 필터 CSV':
-    'Filtered CSV',
-
-  '입지 및 물류비용 분석':
-    'Location & freight analysis',
-
-  '예상 물류비용 시뮬레이터':
-    'Freight scenario calculator',
-
-  '북미 내륙 트럭 기준':
-    'North America inland trucking',
-
-  '운임 단가 ($ / ton·km):':
-    'Freight rate ($ / t·km):',
-
-  '연간 물동량 (톤 / 년):':
-    'Annual volume (t/year):',
-
-  '운송 분류·비용 가정:':
-    'Transport classification / cost assumption:',
-
-  '분류 미확인 — 계산 보류':
-    'Classification unverified — calculation withheld',
-
-  '분류 확인·기본 시나리오 (1.0x)':
-    'Classification confirmed / base scenario (1.0x)',
-
-  '가정 할증 시나리오 (1.35x)':
-    'Assumed surcharge scenario (1.35x)',
-
-  'EPA · 블랙매스·폐기물 판단':
-    'EPA · Black mass & waste classification',
-
-  'IRS · 48C 요건':
-    'IRS · 48C requirements',
-
-  '미국 Census · 블랙매스 수출 관련 공지':
-    'US Census · Black mass export notice',
-
-  '셀/소재':
-    'Cells/materials',
-
-  '법인/물류인프라':
-    'Offices/logistics',
-
-  '표준 지도':
-    'Street map',
-
-  '캔버스':
-    'Light canvas',
-
-  '위성':
-    'Satellite',
-
-  '가정 가격 USD/t:':
-    'Assumed price USD/t:',
-
-  '가정 $/gal:':
-    'Assumed $/gal:',
-
-  '케이티 도로':
-    'Katy road',
-
-  '토랜스 도로':
-    'Torrance road',
-
-  '케이티 개념선':
-    'Katy rail concept',
-
-  '토랜스 개념선':
-    'Torrance rail concept',
-
-  '제도·확인사항':
-    'Policy & checks',
-
-  '반경시뮬: ON (클릭)':
-    'Radius: ON (click map)',
-
-  '반경시뮬: ON':
-    'Radius: ON',
-
-  '반경시뮬: OFF':
-    'Radius: OFF',
-
-  '레이어:':
-    'Layers:',
-
-  '업무 모드':
-    'Work mode',
-
-  '원본 상태':
-    'Source status',
-
-  '분류':
-    'Category',
-
-  '전체':
-    'All',
-
-  '출발':
-    'Origin',
-
-  '도착':
-    'Destination',
-
-  '계산':
-    'Calculate',
-
-  '다크':
-    'Dark',
-
-  '라이트':
-    'Light',
-
-  '초기화':
-    'Reset',
-
+  '담당자·규격·계약·인허가 메모':'Contact / specs / contracts / permits',
+  '거래 역할':'Trading role',
+  '확인 상태':'Verification status',
+  '확인일':'Verified on',
+  '근거 URL':'Source URL',
+  '메모 저장':'Save notes',
+  'JSON 백업 복원':'Restore JSON backup',
+  'JSON 백업':'JSON backup',
+  '현재 필터 CSV':'Filtered CSV',
+  '입지 및 물류비용 분석':'Location & freight analysis',
+  '예상 물류비용 시뮬레이터':'Freight scenario calculator',
+  '북미 내륙 트럭 기준':'North America inland trucking',
+  '운임 단가 ($ / ton·km):':'Freight rate ($ / t·km):',
+  '연간 물동량 (톤 / 년):':'Annual volume (t/year):',
+  '운송 분류·비용 가정:':'Transport classification / cost assumption:',
+  '분류 미확인 — 계산 보류':'Classification unverified — calculation withheld',
+  '분류 확인·기본 시나리오 (1.0x)':'Classification confirmed / base scenario (1.0x)',
+  '가정 할증 시나리오 (1.35x)':'Assumed surcharge scenario (1.35x)',
+  'EPA · 블랙매스·폐기물 판단':'EPA · Black mass & waste classification',
+  'IRS · 48C 요건':'IRS · 48C requirements',
+  '미국 Census · 블랙매스 수출 관련 공지':'US Census · Black mass export notice',
+  '셀/소재':'Cells/materials',
+  '법인/물류인프라':'Offices/logistics',
+  '표준 지도':'Street map',
+  '캔버스':'Light canvas',
+  '위성':'Satellite',
+  '가정 가격 USD/t:':'Assumed price USD/t:',
+  '가정 $/gal:':'Assumed $/gal:',
+  '케이티 도로':'Katy road',
+  '토랜스 도로':'Torrance road',
+  '케이티 개념선':'Katy rail concept',
+  '토랜스 개념선':'Torrance rail concept',
+  '제도·확인사항':'Policy & checks',
+  '반경시뮬: ON (클릭)':'Radius: ON (click map)',
+  '반경시뮬: ON':'Radius: ON',
+  '반경시뮬: OFF':'Radius: OFF',
+  '레이어:':'Layers:',
+  '업무 모드':'Work mode',
+  '원본 상태':'Source status',
+  '분류':'Category',
+  '전체':'All',
+  '출발':'Origin',
+  '도착':'Destination',
+  '계산':'Calculate',
+  '다크':'Dark',
+  '라이트':'Light',
+  '초기화':'Reset',
   ...valueTranslations
 };
 
-const uiPairs=Object.entries(uiTranslations).sort(
-  (a,b)=>b[0].length-a[0].length
-);
+const uiPairs=Object.entries(uiTranslations)
+  .sort((a,b)=>b[0].length-a[0].length);
 
 const uiOriginals=new WeakMap();
 
@@ -3307,9 +2799,7 @@ function englishText(content){
     .slice()
     .sort((a,b)=>b.name.length-a.name.length)
     .forEach(facility=>{
-      output=output
-        .split(facility.name)
-        .join(facility.nameEn);
+      output=output.split(facility.name).join(facility.nameEn);
     });
 
   for(const [ko,en] of uiPairs){
@@ -3327,7 +2817,6 @@ function localizeNode(node,attribute){
   if(raw===null) return;
 
   let record=uiOriginals.get(node);
-
   if(!record){
     record={};
     uiOriginals.set(node,record);
@@ -3337,11 +2826,7 @@ function localizeNode(node,attribute){
   let state=record[key];
 
   if(!state||raw!==state.rendered){
-    state={
-      original:raw,
-      rendered:raw
-    };
-
+    state={original:raw,rendered:raw};
     record[key]=state;
   }
 
@@ -3370,12 +2855,11 @@ const languageObserver=new MutationObserver(()=>{
 
 function translateUI(){
   languageObserver.disconnect();
-
   document.documentElement.lang=currentLang;
 
   document.title=text(
-    'SOLION 북미 거래·입지 대시보드 v8.1',
-    'SOLION North America Trading & Location Dashboard v8.1'
+    'SOLION 북미 거래·입지 대시보드 v8.2',
+    'SOLION North America Trading & Location Dashboard v8.2'
   );
 
   const walker=document.createTreeWalker(
@@ -3388,21 +2872,17 @@ function translateUI(){
         )){
           return NodeFilter.FILTER_REJECT;
         }
-
         return NodeFilter.FILTER_ACCEPT;
       }
     }
   );
 
   let node;
-
   while(node=walker.nextNode()){
     localizeNode(node);
   }
 
-  document.querySelectorAll(
-    '[placeholder],[title]'
-  ).forEach(element=>{
+  document.querySelectorAll('[placeholder],[title]').forEach(element=>{
     ['placeholder','title'].forEach(attribute=>{
       if(element.hasAttribute(attribute)){
         localizeNode(element,attribute);
@@ -3410,26 +2890,18 @@ function translateUI(){
     });
   });
 
-  $('langBtn').textContent=currentLang==='ko'
-    ?'🌐 EN'
-    :'🌐 KO';
+  $('langBtn').textContent=currentLang==='ko'?'🌐 EN':'🌐 KO';
 
-  languageObserver.observe(
-    document.body,
-    {
-      subtree:true,
-      childList:true,
-      characterData:true
-    }
-  );
+  languageObserver.observe(document.body,{
+    subtree:true,
+    childList:true,
+    characterData:true
+  });
 }
 
 function toggleLanguage(){
   languageObserver.disconnect();
-
-  currentLang=currentLang==='ko'
-    ?'en'
-    :'ko';
+  currentLang=currentLang==='ko'?'en':'ko';
 
   fillFacilitySelectors();
   applyFilters();
@@ -3437,12 +2909,7 @@ function toggleLanguage(){
 
   if(lastRadiusOrigin){
     const origin={...lastRadiusOrigin};
-
-    runRadiusAnalysis(
-      origin.lat,
-      origin.lng,
-      origin.title
-    );
+    runRadiusAnalysis(origin.lat,origin.lng,origin.title);
   }
 
   if(isIraActive){
@@ -3460,17 +2927,19 @@ function toggleLanguage(){
   translateUI();
 }
 
+/* =========================================================
+   13. 반응형 배치와 시작
+   ========================================================= */
+
 function updatePanelPositions(){
   const controls=$('topControls');
   const top=controls.offsetTop+controls.offsetHeight+12;
 
   $('toolsPanel').style.top=top+'px';
-  $('toolsPanel').style.maxHeight=
-    'calc(100vh - '+(top+12)+'px)';
+  $('toolsPanel').style.maxHeight='calc(100vh - '+(top+12)+'px)';
 
   $('analysisPanel').style.top=top+'px';
-  $('analysisPanel').style.maxHeight=
-    'calc(100vh - '+(top+12)+'px)';
+  $('analysisPanel').style.maxHeight='calc(100vh - '+(top+12)+'px)';
 }
 
 fillFacilitySelectors();
@@ -3489,7 +2958,6 @@ if(typeof ResizeObserver!=='undefined'){
   const controlsObserver=new ResizeObserver(()=>{
     updatePanelPositions();
   });
-
   controlsObserver.observe($('topControls'));
 }
 
